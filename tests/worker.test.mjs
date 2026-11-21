@@ -79,3 +79,36 @@ test("unknown API paths return 404", async () => {
   const response = await worker.fetch(request("/api/missing", {}), env);
   assert.equal(response.status, 404);
 });
+
+test("search rejects an empty query without requiring AI", async () => {
+  const response = await worker.fetch(request("/api/search", { query: " " }), { ASSETS: env.ASSETS });
+  assert.equal(response.status, 400);
+});
+
+test("search returns normalized Wikipedia sources", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async url => {
+    assert.match(String(url), /fa\.wikipedia\.org\/w\/api\.php/);
+    return Response.json({ query: { search: [
+      { title: "هوش مصنوعی", pageid: 123, snippet: "<span>شاخه‌ای از علوم رایانه</span>" }
+    ] } });
+  };
+  try {
+    const response = await worker.fetch(request("/api/search", { query: "هوش مصنوعی" }), { ASSETS: env.ASSETS });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.results.length, 1);
+    assert.equal(data.results[0].title, "هوش مصنوعی");
+    assert.equal(data.results[0].snippet, "شاخه‌ای از علوم رایانه");
+    assert.match(data.results[0].url, /curid=123/);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("search reports upstream failures safely", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("down", { status: 503 });
+  try {
+    const response = await worker.fetch(request("/api/search", { query: "آزمایش" }), { ASSETS: env.ASSETS });
+    assert.equal(response.status, 502);
+  } finally { globalThis.fetch = originalFetch; }
+});
