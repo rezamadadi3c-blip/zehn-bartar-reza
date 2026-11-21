@@ -5,9 +5,41 @@ const CORS_HEADERS = {
   "access-control-max-age": "86400"
 };
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", ...CORS_HEADERS };
-const json = (data, status=200) => new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+const json = (data, status=200, extraHeaders={}) => new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const isBase64 = value => typeof value === "string" && value.length > 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+const RATE_BUCKETS = new Map();
+const RATE_RULES = {
+  "/api/chat": { limit: 20, windowMs: 60_000 },
+  "/api/search": { limit: 20, windowMs: 60_000 },
+  "/api/image": { limit: 3, windowMs: 60_000 },
+  "/api/transcribe": { limit: 8, windowMs: 60_000 }
+};
+function rateLimit(request, pathname) {
+  const rule = RATE_RULES[pathname];
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (!rule || !ip) return null;
+  const now = Date.now();
+  const key = pathname + ":" + ip;
+  let bucket = RATE_BUCKETS.get(key);
+  if (!bucket || now - bucket.start >= rule.windowMs) {
+    bucket = { start: now, count: 0 };
+  }
+  if (bucket.count >= rule.limit) {
+    const retryAfter = Math.max(1, Math.ceil((rule.windowMs - (now - bucket.start)) / 1000));
+    return json({ error: "تعداد درخواست‌ها در این بازه زیاد است. کمی بعد دوباره تلاش کن." }, 429, {
+      "retry-after": String(retryAfter)
+    });
+  }
+  bucket.count++;
+  RATE_BUCKETS.set(key, bucket);
+  if (RATE_BUCKETS.size > 10_000) {
+    for (const [entry, value] of RATE_BUCKETS) {
+      if (now - value.start >= 120_000) RATE_BUCKETS.delete(entry);
+    }
+  }
+  return null;
+}
 
 export default {
   async fetch(request, env) {
@@ -21,13 +53,16 @@ export default {
         service: "zehn-bartar",
         ai: !!env.AI,
         aiBinding: !!env.AI,
-        features: { chat: true, imageAnalysis: true, imageGeneration: true, transcription: true, webSearch: true },
+        features: { chat: !!env.AI, imageAnalysis: !!env.AI, imageGeneration: !!env.AI, transcription: !!env.AI, webSearch: true },
+        models: { chat: "@cf/zai-org/glm-4.7-flash", vision: "@cf/google/gemma-4-26b-a4b-it", image: "@cf/black-forest-labs/flux-1-schnell", transcription: "@cf/openai/whisper-large-v3-turbo" },
         searchProviders: { brave: !!env.BRAVE_SEARCH_API_KEY, tavily: !!env.TAVILY_API_KEY, wikipediaFallback: true },
         limits: { requestBytes: MAX_BODY_BYTES, chatMessages: 24, imageBytes: 3 * 1024 * 1024, audioBytes: 4 * 1024 * 1024 }
       });
     }
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     if (request.method !== "POST") return json({ error: "روش درخواست پشتیبانی نمی‌شود." }, 405);
+    const limited = rateLimit(request, url.pathname);
+    if (limited) return limited;
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.toLowerCase().includes("application/json")) return json({ error: "نوع محتوای درخواست باید JSON باشد." }, 415);
     const declaredSize = Number(request.headers.get("content-length") || 0);
@@ -177,7 +212,8 @@ export default {
 
       return json({ error: "مسیر API پیدا نشد." }, 404);
     } catch (error) {
-      return json({ error: String(error?.message || "خطا در اجرای هوش مصنوعی").slice(0, 300) }, 502);
+      console.error("Zehn Bartar API failure:", url.pathname, error?.message || "unknown");
+      return json({ error: "پردازش درخواست ناموفق بود. چند لحظه بعد دوباره تلاش کن." }, 502);
     }
   }
 };
