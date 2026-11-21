@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>ذهن برتر رضا</title>
+<style>
+:root{--bg:#0b1220;--panel:#151f31;--panel2:#1c2940;--text:#f2f5fa;--muted:#aab6c8;--accent:#67d5bd;--warn:#ffca70;--red:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101b2d);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.8}
+header{padding:22px 18px 14px;background:#0d1727;border-bottom:1px solid #29364a}
+h1{font-size:23px;margin:0;color:var(--accent)}header p{margin:3px 0;color:var(--muted);font-size:13px}
+main{max-width:760px;margin:auto;padding:14px 14px 80px}.tabs{display:flex;gap:7px;overflow:auto;padding:8px 0 14px}
+button{border:0;border-radius:12px;padding:10px 13px;background:var(--panel2);color:var(--text);font:inherit;cursor:pointer}
+.tab.active,button.primary{background:var(--accent);color:#09221e;font-weight:bold}
+.card{background:var(--panel);border:1px solid #29364a;border-radius:17px;padding:15px;margin:10px 0}
+h2{font-size:18px;margin:0 0 9px}h3{font-size:15px;margin:10px 0 5px}
+label{display:block;color:var(--muted);font-size:13px;margin:9px 0 4px}
+textarea,input,select{width:100%;padding:11px;border-radius:11px;border:1px solid #34445c;background:#0c1626;color:var(--text);font:inherit}
+textarea{min-height:115px;resize:vertical}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.row button{flex:1;min-width:110px}
+.small{font-size:12px;color:var(--muted)}.result{background:#0c1626;padding:12px;border-radius:12px;margin-top:10px;white-space:pre-wrap}
+.hidden{display:none}.muted{color:var(--muted)}.flag{padding:8px 10px;margin:6px 0;border-right:3px solid var(--warn);background:#202b3c;border-radius:8px}
+.good{border-color:var(--accent)}.bad{border-color:var(--red)}.entry{padding:10px 0;border-bottom:1px solid #29364a}
+footer{position:fixed;bottom:0;left:0;right:0;background:#0d1727;padding:7px;text-align:center;color:var(--muted);font-size:11px}
+</style>
+</head>
+<body>
+<header><h1>ذهن برتر رضا</h1><p>برای فکر روشن‌تر، تصمیم دقیق‌تر و گفت‌وگوی آگاهانه</p></header>
+<main>
+<nav class="tabs">
+<button class="tab active" data-page="analyze">تحلیل گفتگو</button>
+<button class="tab" data-page="reply">پاسخ‌ساز</button>
+<button class="tab" data-page="notes">یادداشت‌ها</button>
+<button class="tab" data-page="daily">گزارش روزانه</button>
+<button class="tab" data-page="guide">راهنما</button>
+</nav>
+<section id="analyze" class="page">
+<div class="card">
+<h2>تحلیل پیام یا گفتگو</h2>
+<p class="small">متن را وارد کن تا نشانه‌های فشار، فوریت، درخواست پول یا اطلاعات محرمانه و تعهد مبهم بررسی شود.</p>
+<label for="source">متن گفتگو</label><textarea id="source" placeholder="پیام را اینجا وارد کن..."></textarea>
+<div class="row"><button class="primary" id="analyzeBtn">تحلیل کن</button><button id="speechBtn">🎙 گفتار به متن</button><button id="clearBtn">پاک کردن</button></div>
+<div id="analysis" class="result hidden" aria-live="polite"></div>
+<p class="small">گفتار به متن فقط در مرورگرهای سازگار کار می‌کند و ممکن است به اینترنت نیاز داشته باشد. برنامه مخفیانه صدا ضبط نمی‌کند.</p>
+</div>
+<div class="card"><h2>چک‌لیست تصمیم امن</h2>
+<ul><li>برای تصمیم عجله نکن.</li><li>رمز، کد یک‌بارمصرف یا اطلاعات بانکی را برای کسی نفرست.</li><li>قبل از پرداخت، هویت و دلیل درخواست را از راه مستقل بررسی کن.</li><li>تعهد مالی یا حقوقی را قبل از قبول، مکتوب و دقیق بخوان.</li></ul>
+</div>
+</section>
+<section id="reply" class="page hidden">
+<div class="card"><h2>پاسخ‌ساز</h2>
+<label for="tone">لحن پاسخ</label><select id="tone"><option value="calm">محترمانه و آرام</option><option value="firm">قاطع و کوتاه</option><option value="delay">درخواست زمان</option><option value="decline">رد محترمانه</option><option value="clarify">درخواست توضیح</option></select>
+<label for="replyInput">پیام یا موقعیت</label><textarea id="replyInput" placeholder="متن طرف مقابل یا موضوع را بنویس..."></textarea>
+<button class="primary" id="replyBtn">پیشنهاد پاسخ</button><div id="replyResult" class="result hidden"></div>
+</div></section>
+<section id="notes" class="page hidden">
+<div class="card"><h2>یادداشت‌ها و تصمیم‌ها</h2><p class="small">یادداشت‌ها روی همین دستگاه و در مرورگر ذخیره می‌شوند.</p>
+<label for="noteTitle">عنوان</label><input id="noteTitle" placeholder="مثلاً مرز مالی من">
+<label for="noteBody">متن یادداشت</label><textarea id="noteBody" placeholder="نکته یا تصمیم خودت را بنویس..."></textarea>
+<button class="primary" id="saveNote">ذخیره یادداشت</button><div id="notesList"></div>
+</div></section>
+<section id="daily" class="page hidden">
+<div class="card"><h2>گزارش روزانه</h2><p id="dateLine" class="small"></p>
+<div id="stats"></div><label for="dailyText">جمع‌بندی امروز</label><textarea id="dailyText" placeholder="امروز چه چیزی خوب پیش رفت؟ چه تصمیمی گرفتم؟"></textarea>
+<button class="primary" id="saveDaily">ذخیره گزارش امروز</button><p id="dailySaved" class="small"></p>
+</div></section>
+<section id="guide" class="page hidden">
+<div class="card"><h2>راهنمای برنامه</h2>
+<h3>تحلیل گفتگو</h3><p>متن پیام را وارد کن و تحلیل را بزن. برنامه فقط نشانه‌های متنی را پیدا می‌کند؛ نیت افراد را با قطعیت تشخیص نمی‌دهد.</p>
+<h3>پاسخ‌ساز</h3><p>موقعیت و لحن را انتخاب کن. پاسخ پیشنهادی را می‌توانی کپی و ویرایش کنی.</p>
+<h3>یادداشت‌ها و گزارش</h3><p>یادداشت‌ها و جمع‌بندی روزانه در حافظه محلی مرورگر ذخیره می‌شوند. پاک کردن داده‌های مرورگر ممکن است آن‌ها را حذف کند.</p>
+<h3>محدودیت نسخه</h3><p>این نسخه مستقل و آفلاین است؛ هوش مصنوعی ابری یا تحلیل تخصصی روان‌شناختی ندارد. فایل را با Chrome باز کن و از منوی سه‌نقطه «افزودن به صفحه اصلی» را انتخاب کن. ضبط پس‌زمینه انجام نمی‌شود.</p>
+</div></section>
+</main><footer>ذهن برتر رضا · نسخه ۱.۰ · ذخیره‌سازی محلی</footer>
+<script>
+const $=id=>document.getElementById(id);
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.page).classList.remove('hidden');});
+const checks=[
+[/همین الان|فوری|فقط امروز|سریع تصمیم بگیر|وقت نداریم|آخرین فرصت/i,'فشار زمانی یا ایجاد عجله دیده می‌شود؛ قبل از تصمیم، مکث و راستی‌آزمایی کن.'],
+[/رمز|کد تایید|کد تأیید|رمز پویا|cvv|شماره کارت|اطلاعات بانکی/i,'درخواست اطلاعات مالی یا امنیتی دیده می‌شود؛ رمز و کد یک‌بارمصرف را به هیچ‌کس نده.'],
+[/پول|واریز|پرداخت|بیعانه|قرض|ت transfer|کارت به کارت/i,'موضوع مالی مطرح است؛ هویت، علت و مقصد پرداخت را مستقل بررسی کن.'],
+[/اگر دوستم داری|به من اعتماد نداری|فقط تو می‌توانی|عذاب وجدان|تقصیر توست/i,'ممکن است از احساس گناه یا رابطه برای اثرگذاری استفاده شده باشد؛ به خودت زمان بده.'],
+[/امضا|قرارداد|تعهد|ضمانت|چک|سفته/i,'تعهد یا سند مطرح است؛ متن کامل و پیامدها را قبل از قبول بررسی کن.'],
+[/محرمانه|به کسی نگو|پاکش کن|مخفی نگه دار/i,'درخواست پنهان‌کاری دیده می‌شود؛ دلیل آن را بررسی و در صورت لزوم با فرد قابل اعتماد مشورت کن.']
+];
+$('analyzeBtn').onclick=()=>{let t=$('source').value.trim();if(!t){$('analysis').textContent='اول متن گفتگو را وارد کن.';$('analysis').classList.remove('hidden');return;}
+let found=checks.filter(x=>x[0].test(t));let s='نتیجه بررسی اولیه\\n\\n';s+=found.length?found.map((x,i)=>(i+1)+'. '+x[1]).join('\\n\\n'):'نشانه مشخصی از الگوهای تعریف‌شده پیدا نشد؛ این به معنی امن یا درست بودن پیام نیست.';
+s+='\\n\\nپیشنهاد: اگر موضوع مهم مالی، حقوقی یا شخصی است، مستقل بررسی کن و تحت فشار پاسخ نده.';$('analysis').textContent=s;$('analysis').classList.remove('hidden');};
+$('clearBtn').onclick=()=>{$('source').value='';$('analysis').classList.add('hidden');};
+$('speechBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('این مرورگر تبدیل گفتار به متن را پشتیبانی نمی‌کند. از تایپ متن استفاده کن.');return;}let r=new SR();r.lang='fa-IR';r.interimResults=false;r.onresult=e=>$('source').value+=( $('source').value?' ':'')+e.results[0][0].transcript;r.onerror=()=>alert('تشخیص گفتار انجام نشد؛ دوباره تلاش کن یا متن را تایپ کن.');r.start();};
+const replies={calm:'ممنون که توضیح دادی. اجازه بده موضوع را با دقت بررسی کنم و بعد پاسخ قطعی بدهم.',firm:'در حال حاضر با این درخواست موافق نیستم. لطفاً به تصمیمم احترام بگذار.',delay:'برای تصمیم‌گیری به زمان نیاز دارم. پس از بررسی کامل، خودم پاسخ می‌دهم.',decline:'ممنون از پیشنهادت، اما امکان پذیرفتن این درخواست را ندارم.',clarify:'لطفاً جزئیات، شرایط، هزینه‌ها و مسئولیت‌ها را دقیق و ترجیحاً مکتوب توضیح بده تا بتوانم بررسی کنم.'};
+$('replyBtn').onclick=()=>{let t=$('replyInput').value.trim();$('replyResult').textContent=(t?'پاسخ پیشنهادی برای این موقعیت:\\n':'')+replies[$('tone').value];$('replyResult').classList.remove('hidden');let b=document.createElement('button');b.textContent='کپی پاسخ';b.onclick=()=>navigator.clipboard?.writeText($('replyResult').textContent);$('replyResult').appendChild(document.createElement('br'));$('replyResult').appendChild(b);};
+function renderNotes(){let a=read('zbr_notes',[]);$('notesList').innerHTML='';a.forEach((n,i)=>{let d=document.createElement('div');d.className='entry';let h=document.createElement('b');h.textContent=n.title;let p=document.createElement('p');p.textContent=n.body;let del=document.createElement('button');del.textContent='حذف';del.onclick=()=>{a.splice(i,1);write('zbr_notes',a);renderNotes();};d.append(h,p,del);$('notesList').appendChild(d);});}
+$('saveNote').onclick=()=>{let title=$('noteTitle').value.trim(),body=$('noteBody').value.trim();if(!title||!body){alert('عنوان و متن یادداشت را وارد کن.');return;}let a=read('zbr_notes',[]);a.unshift({title,body,date:new Date().toLocaleDateString('fa-IR')});write('zbr_notes',a);$('noteTitle').value='';$('noteBody').value='';renderNotes();};
+const today=new Date();$('dateLine').textContent='تاریخ: '+today.toLocaleDateString('fa-IR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+function stats(){let n=read('zbr_notes',[]);$('stats').textContent='تعداد یادداشت‌های ذخیره‌شده: '+n.length;}
+$('saveDaily').onclick=()=>{write('zbr_daily_'+today.toISOString().slice(0,10),$('dailyText').value);$('dailySaved').textContent='گزارش امروز روی همین دستگاه ذخیره شد.';};
+$('dailyText').value=read('zbr_daily_'+today.toISOString().slice(0,10),'');renderNotes();stats();
+</script>
+</body></html>
