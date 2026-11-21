@@ -1,42 +1,71 @@
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+const json = (data, status=200) => new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+function decodeBase64(value) {
+  const clean = String(value || "").replace(/^data:[^,]*;base64,/, "");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean) || clean.length > 6_000_000) throw new Error("فایل نامعتبر یا بیش از حد بزرگ است.");
+  const raw = atob(clean);
+  const bytes = new Uint8Array(raw.length);
+  for (let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+  return bytes;
+}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/health") {
-      return Response.json({ ok: true, service: "zehn-bartar", ai: Boolean(env.AI || env.AI_API_KEY) });
+    if (request.method === "GET" && url.pathname === "/api/health") {
+      return json({ ok:true, service:"zehn-bartar", ai:!!env.AI });
     }
-    if (url.pathname === "/api/chat" && request.method === "POST") {
-      let body;
-      try { body = await request.json(); } catch { return Response.json({ error: "درخواست نامعتبر است." }, { status: 400 }); }
-      const messages = Array.isArray(body.messages) ? body.messages.slice(-20) : [];
-      if (!messages.length) return Response.json({ error: "پیام خالی است." }, { status: 400 });
-      const safeMessages = [
-        { role: "system", content: "تو دستیار فارسی‌زبان دقیق و مفید هستی. پاسخ‌ها را روشن و به زبان فارسی ارائه کن." },
-        ...messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "").slice(0, 12000) }))
-      ];
-      try {
-        if (env.AI) {
-          const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", { messages: safeMessages });
-          const reply = result?.response || result?.result?.response || result?.output_text;
-          if (!reply) return Response.json({ error: "مدل ابری پاسخ قابل‌خواندن نداد." }, { status: 502 });
-          return Response.json({ reply });
+    if (request.method !== "POST" || !url.pathname.startsWith("/api/")) {
+      if (url.pathname.startsWith("/api/")) return json({error:"روش درخواست پشتیبانی نمی‌شود."},405);
+      return env.ASSETS.fetch(request);
+    }
+    if (!env.AI) return json({error:"اتصال Workers AI در تنظیمات Cloudflare فعال نشده است."},503);
+    let body;
+    try { body=await request.json(); } catch { return json({error:"درخواست نامعتبر است."},400); }
+    try {
+      if (url.pathname === "/api/chat") {
+        const messages=Array.isArray(body.messages)?body.messages.slice(-24):[];
+        if (!messages.length) return json({error:"پیام خالی است."},400);
+        const normalized=messages.map(m=>({role:m.role==="assistant"?"assistant":"user",content:String(m.content||"").slice(0,12000)}));
+        if (body.image) {
+          const mime=String(body.mimeType||"image/jpeg");
+          if (!mime.startsWith("image/")) return json({error:"فقط فایل تصویری مجاز است."},400);
+          const data=String(body.image).replace(/^data:[^,]+,/, "");
+          if (data.length>4_500_000) return json({error:"حجم تصویر زیاد است؛ تصویر کوچک‌تری انتخاب کنید."},413);
+          const last=normalized[normalized.length-1];
+          normalized[normalized.length-1]={role:"user",content:[
+            {type:"text",text:last.content||"این تصویر را بررسی و توضیح بده."},
+            {type:"image_url",image_url:{url:"data:"+mime+";base64,"+data}}
+          ]};
         }
-        if (!env.AI_API_KEY) return Response.json({ error: "اتصال هوش ابری هنوز در Cloudflare فعال نشده است." }, { status: 503 });
-        const endpoint = env.AI_API_URL || "https://api.groq.com/openai/v1/chat/completions";
-        const model = env.AI_MODEL || "llama-3.3-70b-versatile";
-        const upstream = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${env.AI_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model, messages: safeMessages, temperature: 0.7 })
+        const result=await env.AI.run(body.image?"@cf/moonshotai/kimi-k2.5":"@cf/meta/llama-3.1-8b-instruct",{
+          messages:[{role:"system",content:"تو دستیار فارسی‌زبان دقیق، ایمن و کاربردی هستی. پاسخ‌ها را به فارسی روشن و منظم بده. اگر چیزی را نمی‌دانی صریح بگو."},...normalized],
+          max_tokens:1200
         });
-        const data = await upstream.json().catch(() => ({}));
-        if (!upstream.ok) return Response.json({ error: data?.error?.message || "سرویس هوش مصنوعی پاسخ نداد." }, { status: 502 });
-        const reply = data?.choices?.[0]?.message?.content;
-        if (!reply) return Response.json({ error: "پاسخی دریافت نشد." }, { status: 502 });
-        return Response.json({ reply });
-      } catch {
-        return Response.json({ error: "ارتباط با هوش ابری برقرار نشد؛ وضعیت سرویس و سهمیه را بررسی کنید." }, { status: 502 });
+        const reply=result?.response||result?.choices?.[0]?.message?.content||result?.result?.response;
+        return reply?json({reply}):json({error:"مدل پاسخ قابل‌خواندن نداد."},502);
       }
+      if (url.pathname === "/api/transcribe") {
+        const audio=decodeBase64(body.audio);
+        if (audio.byteLength>4*1024*1024) return json({error:"فایل صوتی باید کمتر از ۴ مگابایت باشد."},413);
+        const result=await env.AI.run("@cf/openai/whisper-large-v3-turbo",{audio:Array.from(audio),task:"transcribe"});
+        return json({text:result?.text||""});
+      }
+      if (url.pathname === "/api/image") {
+        const prompt=String(body.prompt||"").trim().slice(0,1500);
+        if (!prompt) return json({error:"توضیح تصویر را وارد کنید."},400);
+        const result=await env.AI.run("@cf/black-forest-labs/flux-1-schnell",{prompt});
+        const imageData=result?.image||result;
+        if (!imageData) return json({error:"تصویر ساخته نشد."},502);
+        let bytes;
+        if (typeof imageData==="string") bytes=decodeBase64(imageData);
+        else if (imageData instanceof Uint8Array) bytes=imageData;
+        else if (imageData instanceof ArrayBuffer) bytes=new Uint8Array(imageData);
+        else return json({error:"قالب تصویر دریافتی پشتیبانی نمی‌شود."},502);
+        return new Response(bytes,{headers:{"content-type":"image/jpeg","cache-control":"no-store"}});
+      }
+      return json({error:"مسیر API پیدا نشد."},404);
+    } catch (error) {
+      return json({error:String(error?.message||"خطا در اجرای هوش مصنوعی").slice(0,300)},502);
     }
-    return env.ASSETS.fetch(request);
   }
 };
