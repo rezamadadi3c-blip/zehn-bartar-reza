@@ -40,12 +40,24 @@ jobs:
           CONFIGURED_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          RESPONSE=$(curl --fail --silent --show-error \
+          VERIFY=$(curl --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify")
+          if [ "$(printf '%s' "$VERIFY" | jq -r '.success')" != "true" ]; then
+            echo "::error::Cloudflare API token verification failed:"
+            printf '%s' "$VERIFY" | jq -r '.errors[]?.message'
+            exit 1
+          fi
+          curl --silent --show-error \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts")
-          if [ "$(printf '%s' "$RESPONSE" | jq -r '.success')" != "true" ]; then
-            echo "::error::Cloudflare did not authorize membership lookup. Check token permissions."
+            "https://api.cloudflare.com/client/v4/accounts?page=1&per_page=50" \
+            -o /tmp/cloudflare-accounts.json -w "%{http_code}" > /tmp/cloudflare-status.txt
+          HTTP_STATUS=$(cat /tmp/cloudflare-status.txt)
+          RESPONSE=$(cat /tmp/cloudflare-accounts.json)
+          if [ "$HTTP_STATUS" != "200" ] || [ "$(printf '%s' "$RESPONSE" | jq -r '.success')" != "true" ]; then
+            echo "::error::Cloudflare account lookup failed (HTTP $HTTP_STATUS):"
+            printf '%s' "$RESPONSE" | jq -r '.errors[]?.message'
             exit 1
           fi
           ACCOUNTS=$(printf '%s' "$RESPONSE" | jq -r '.result[]? | [.id, (.name // "")] | @tsv')
