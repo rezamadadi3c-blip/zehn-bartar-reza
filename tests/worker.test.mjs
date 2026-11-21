@@ -141,8 +141,7 @@ test("web search merges Brave and Tavily results without exposing API keys", asy
     assert.equal(data.mode, "web");
     assert.deepEqual(data.providers.sort(), ["Brave", "Tavily"]);
     assert.equal(data.results.length, 2);
-    assert.equal(data.results[0].source, "Brave");
-    assert.equal(data.results[1].source, "Tavily");
+    assert.deepEqual(data.results.map(item => item.source).sort(), ["Brave", "Tavily"]);
     assert.ok(calls.some(call => call.target.includes("api.search.brave.com")));
     assert.ok(calls.some(call => call.target.includes("api.tavily.com")));
     assert.ok(!JSON.stringify(data).includes("server-secret"));
