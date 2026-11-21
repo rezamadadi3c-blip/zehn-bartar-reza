@@ -1,0 +1,13 @@
+{
+  "name": "ذهن برتر رضا",
+  "short_name": "ذهن برتر",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./zehn_bartar_reza.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "description": "ابزار فارسی برای تحلیل مقدماتی گفتگو، پاسخ‌سازی و ثبت یادداشت‌ها",
+  "icons": []
+}
