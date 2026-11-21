@@ -72,7 +72,7 @@ export default {
           };
         }
 
-        const model = body.image ? "@cf/moonshotai/kimi-k2.5" : "@cf/zai-org/glm-4.7-flash";
+        const model = body.image ? "@cf/google/gemma-4-26b-a4b-it" : "@cf/zai-org/glm-4.7-flash";
         const result = await env.AI.run(model, {
           messages: [
             { role: "system", content: "تو دستیار فارسی‌زبان دقیق، ایمن و کاربردی هستی. پاسخ‌ها را به فارسی روشن و منظم بده. اگر چیزی را نمی‌دانی صریح بگو." },
