@@ -1,52 +1,70 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827"><meta name="description" content="دستیار هوشمند فارسی‌زبان ذهن برتر">
 <link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ذهن برتر</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f6fb;font-family:Tahoma,Arial,sans-serif}
-main{max-width:760px;margin:auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
-header{padding:12px 4px 20px}h1{margin:0;font-size:27px}header p{color:#aab4ca;margin:8px 0}
-#chat{flex:1;min-height:45vh;display:flex;flex-direction:column;gap:12px;padding:12px 0}
-.msg{padding:13px 15px;border-radius:15px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
-.user{background:#26395d;align-self:flex-start;max-width:90%}.bot{background:#172033;border:1px solid #28344c;align-self:stretch}
-form{display:flex;gap:8px;position:sticky;bottom:0;background:#0b1020;padding:12px 0}
-textarea{flex:1;resize:vertical;min-height:54px;max-height:160px;border-radius:12px;padding:13px;background:#151e30;color:white;border:1px solid #34415c;font:inherit}
-button{border:0;border-radius:12px;padding:0 20px;background:#6d8cff;color:#081020;font-weight:bold;font:inherit}
-button:disabled{opacity:.55}
-#status{font-size:12px;color:#aab4ca;min-height:20px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
-#install{display:none;padding:8px 12px;border-radius:9px;font-size:13px}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f6fb;font-family:Tahoma,Arial,sans-serif}
+main{max-width:850px;margin:auto;padding:16px;min-height:100dvh;display:flex;flex-direction:column}
+header{padding:10px 3px 14px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px}h1{margin:0;font-size:25px}.sub{color:#aab4ca;font-size:13px;margin:7px 0 0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+button,.filebtn{border:1px solid #394762;border-radius:11px;padding:10px 13px;background:#172238;color:#f4f6fb;font:inherit;font-size:13px;cursor:pointer}
+button.primary{background:#6d8cff;color:#081020;border:0;font-weight:bold}button:disabled{opacity:.5;cursor:wait}
+#install{display:none}#chat{flex:1;min-height:36vh;display:flex;flex-direction:column;gap:12px;padding:12px 0}
+.msg{padding:13px 15px;border-radius:15px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;max-width:94%}
+.user{background:#26395d;align-self:flex-start}.bot{background:#172033;border:1px solid #28344c;align-self:stretch;max-width:100%}
+.msg img{max-width:100%;border-radius:12px;display:block;margin-top:8px}
+#status{font-size:12px;color:#aab4ca;min-height:20px;margin:4px 0}
+.composer{position:sticky;bottom:0;background:#0b1020;padding:10px 0 max(10px,env(safe-area-inset-bottom));border-top:1px solid #202b40}
+textarea,input{font:inherit;color:white;background:#151e30;border:1px solid #34415c;border-radius:12px;padding:12px;width:100%}
+textarea{min-height:58px;max-height:170px;resize:vertical}
+.sendrow{display:flex;gap:8px;margin-top:8px}.sendrow button{min-width:76px}
+#preview{max-width:120px;max-height:100px;border-radius:8px;display:none;margin-top:8px}
+.small{font-size:11px;color:#91a0bb;margin-top:6px}.hidden{display:none!important}
+#imageResult{max-width:100%;border-radius:12px;margin-top:10px}
+@media(min-width:650px){main{padding:22px}.msg{max-width:85%}.bot{max-width:100%}}
 </style></head>
 <body><main>
-<header><div class="topbar"><h1>ذهن برتر</h1><button id="install" type="button">نصب برنامه</button></div><p>دستیار هوشمند فارسی‌زبان</p></header>
-<div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. پیام خود را بنویسید.</div></div>
-<div id="status">برای فعال شدن پاسخ‌گویی هوشمند، کلید API باید به‌صورت Secret در Cloudflare ثبت شود.</div>
-<form id="form"><textarea id="prompt" placeholder="پیامت را بنویس..." required></textarea><button id="send">ارسال</button></form>
+<header><div class="top"><h1>ذهن برتر</h1><button id="install">نصب برنامه</button></div><p class="sub">دستیار هوشمند فارسی‌زبان · متن، تصویر و صدا</p></header>
+<div class="tools">
+<button id="newChat">گفت‌وگوی جدید</button>
+<button id="speakToggle">خواندن پاسخ‌ها: خاموش</button>
+<button id="voiceBtn">🎙 گفتار به متن</button>
+<button id="imageMode">ساخت تصویر</button>
+<label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*">
+</div>
+<div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
+<div id="status">در حال بررسی اتصال...</div>
+<div class="composer">
+<img id="preview" alt="پیش‌نمایش تصویر">
+<textarea id="prompt" placeholder="پیامت را بنویس..." rows="2"></textarea>
+<div class="sendrow"><button class="primary" id="send">ارسال</button><button id="clearImage">حذف تصویر</button></div>
+<div class="small">گفت‌وگوها روی همین دستگاه ذخیره می‌شوند. برای پاسخ هوشمند و امکانات ابری به اینترنت نیاز است.</div>
+</div>
 </main>
 <script>
-const form=document.querySelector('#form'), input=document.querySelector('#prompt'), chat=document.querySelector('#chat'), statusBox=document.querySelector('#status'), send=document.querySelector('#send');
-const history=[];
-function bubble(text,who){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el}
-form.addEventListener('submit',async e=>{
- e.preventDefault();const text=input.value.trim();if(!text)return;
- bubble(text,'user');history.push({role:'user',content:text});input.value='';send.disabled=true;statusBox.textContent='در حال دریافت پاسخ...';
- const loading=bubble('در حال فکر کردن...','bot');
- try{
-  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
-  const data=await res.json();loading.textContent=data.reply||data.error||'خطای نامشخص';
-  if(res.ok&&data.reply)history.push({role:'assistant',content:data.reply});
-  statusBox.textContent=res.ok?'آماده':'اتصال هوش ابری هنوز تنظیم نشده یا خطا دارد.';
- }catch{loading.textContent='ارتباط برقرار نشد. اینترنت یا تنظیمات سرور را بررسی کنید.';statusBox.textContent='خطای اتصال';}
- finally{send.disabled=false;input.focus();}
-});
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
-let installPrompt;
-const installButton=document.querySelector('#install');
-window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;installButton.style.display='block';});
-installButton.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installButton.style.display='none';});
+const $=s=>document.querySelector(s), chat=$('#chat'),input=$('#prompt'),statusBox=$('#status'),send=$('#send'),imageFile=$('#imageFile'),preview=$('#preview');
+let history=[];let selectedImage=null;let readAloud=false;let makeImage=false;
+try{history=JSON.parse(localStorage.getItem('zb_history')||'[]');if(history.length){chat.innerHTML='';history.forEach(m=>bubble(m.content,m.role==='user'?'user':'bot',false));}}catch{history=[];}
+function bubble(text,who,scroll=true){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);if(scroll)el.scrollIntoView({behavior:'smooth',block:'end'});return el}
+function save(){try{localStorage.setItem('zb_history',JSON.stringify(history.slice(-60)));}catch{}}
+async function check(){try{const r=await fetch('/api/health');const d=await r.json();statusBox.textContent=d.ai?'اتصال هوش ابری برقرار است.':'سرور فعال است؛ اتصال هوش مصنوعی در انتظار تنظیم Cloudflare است.';}catch{statusBox.textContent='اتصال به سرور برقرار نشد.';}}
+check();
+$('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');};
+$('#speakToggle').onclick=()=>{readAloud=!readAloud;$('#speakToggle').textContent='خواندن پاسخ‌ها: '+(readAloud?'روشن':'خاموش');if(!readAloud&&speechSynthesis)speechSynthesis.cancel();};
+$('#clearImage').onclick=()=>{selectedImage=null;imageFile.value='';preview.style.display='none';};
+imageFile.onchange=()=>{const file=imageFile.files[0];if(!file)return;if(file.size>3*1024*1024){statusBox.textContent='تصویر باید کمتر از ۳ مگابایت باشد.';imageFile.value='';return;}const reader=new FileReader();reader.onload=()=>{selectedImage=reader.result;preview.src=selectedImage;preview.style.display='block';};reader.readAsDataURL(file);};
+$('#imageMode').onclick=()=>{makeImage=!makeImage;$('#imageMode').textContent=makeImage?'بازگشت به چت':'ساخت تصویر';input.placeholder=makeImage?'تصویری که می‌خواهی بساز را توصیف کن...':'پیامت را بنویس...';};
+async function submit(){const text=input.value.trim();if(!text&&!selectedImage)return;if(makeImage){await generateImage(text);return;}
+const user=bubble(text||'این تصویر را بررسی کن.','user');if(selectedImage){const im=document.createElement('img');im.src=selectedImage;user.appendChild(im);}
+history.push({role:'user',content:text||'این تصویر را بررسی کن.'});save();input.value='';send.disabled=true;statusBox.textContent='در حال دریافت پاسخ...';const loading=bubble('در حال پردازش...','bot');
+try{const payload={messages:history};if(selectedImage){payload.image=selectedImage;payload.mimeType=selectedImage.slice(5,selectedImage.indexOf(';'));}const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();loading.textContent=d.reply||d.error||'خطای نامشخص';if(r.ok&&d.reply){history.push({role:'assistant',content:d.reply});save();if(readAloud&&'speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(d.reply));}}statusBox.textContent=r.ok?'آماده':'سرویس خطا داد.';}catch{loading.textContent='ارتباط با سرور برقرار نشد.';statusBox.textContent='خطای اتصال';}finally{selectedImage=null;imageFile.value='';preview.style.display='none';send.disabled=false;input.focus();}}
+async function generateImage(prompt){if(!prompt){statusBox.textContent='اول توضیح تصویر را بنویس.';return;}send.disabled=true;statusBox.textContent='در حال ساخت تصویر...';const msg=bubble('در حال ساخت تصویر...','bot');try{const r=await fetch('/api/image',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt})});if(!r.ok){const d=await r.json();throw new Error(d.error||'ساخت تصویر ناموفق بود.');}const blob=await r.blob(),url=URL.createObjectURL(blob);msg.textContent='تصویر ساخته شد.';const img=document.createElement('img');img.id='imageResult';img.src=url;msg.appendChild(img);statusBox.textContent='تصویر آماده است.';}catch(e){msg.textContent=e.message;statusBox.textContent='ساخت تصویر انجام نشد.';}finally{send.disabled=false;}}
+send.onclick=submit;input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
+$('#voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){statusBox.textContent='تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ از صفحه‌کلید صوتی گوشی استفاده کن.';return;}const rec=new SR();rec.lang='fa-IR';rec.interimResults=false;rec.onstart=()=>statusBox.textContent='گوش می‌دهم...';rec.onresult=e=>{input.value+=(input.value?' ':'')+e.results[0][0].transcript;statusBox.textContent='گفتار به متن تبدیل شد.';};rec.onerror=()=>statusBox.textContent='دسترسی میکروفون یا تشخیص گفتار با خطا روبه‌رو شد.';rec.start();};
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+let installPrompt;const installButton=$('#install');addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installButton.style.display='block';});installButton.onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installButton.style.display='none';};
 </script></body></html>
