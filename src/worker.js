@@ -41,6 +41,30 @@ export default {
     } catch {
       return json({ error: "درخواست JSON نامعتبر است." }, 400);
     }
+    if (url.pathname === "/api/search") {
+      const query = String(body.query || "").trim().slice(0, 160);
+      if (query.length < 2) return json({ error: "عبارت جست‌وجو باید دست‌کم ۲ نویسه باشد." }, 400);
+      try {
+        const endpoint = new URL("https://fa.wikipedia.org/w/api.php");
+        endpoint.search = new URLSearchParams({
+          action: "query", list: "search", srsearch: query, srlimit: "5",
+          srprop: "snippet", format: "json", formatversion: "2", origin: "*"
+        }).toString();
+        const upstream = await fetch(endpoint.toString(), {
+          headers: { "accept": "application/json", "user-agent": "ZehnBartar/1.0 (Persian assistant)" }
+        });
+        if (!upstream.ok) return json({ error: "سرویس جست‌وجو موقتاً پاسخ نمی‌دهد." }, 502);
+        const data = await upstream.json();
+        const results = (data?.query?.search || []).map(item => ({
+          title: String(item.title || ""),
+          snippet: String(item.snippet || "").replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").slice(0, 500),
+          url: "https://fa.wikipedia.org/?curid=" + encodeURIComponent(String(item.pageid))
+        })).filter(item => item.title && item.url);
+        return json({ query, source: "ویکی‌پدیای فارسی", results });
+      } catch {
+        return json({ error: "ارتباط با سرویس جست‌وجو برقرار نشد." }, 502);
+      }
+    }
     if (!env.AI) return json({ error: "اتصال Workers AI در تنظیمات Cloudflare فعال نشده است." }, 503);
 
     try {
