@@ -78,7 +78,7 @@ test("image analysis uses the free-tier Gemma 4 vision model", async () => {
 test("AI diagnostics performs a real minimal model inference", async () => {
   let model = "";
   const diagnosticEnv = {
-    AI: { run: async (name, input) => { model = name; assert.equal(input.max_tokens, 8); return { response: "OK" }; } },
+    AI: { run: async (name, input) => { model = name; assert.equal(input.max_tokens, 1400); return { response: "OK" }; } },
     ASSETS: env.ASSETS
   };
   const response = await worker.fetch(request("/api/diagnostics", {}), diagnosticEnv);
@@ -184,5 +184,31 @@ test("API rate limits are enforced per client IP and endpoint", async () => {
     }
     assert.equal(last.status, 429);
     assert.ok(Number(last.headers.get("retry-after")) >= 1);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test("chat falls back to Gemini when Cloudflare inference fails", async () => {
+  const originalFetch = globalThis.fetch;
+  let requested = false;
+  globalThis.fetch = async (url, options = {}) => {
+    requested = String(url).includes("generativelanguage.googleapis.com");
+    assert.equal(options.headers["x-goog-api-key"], "test-gemini-key");
+    return Response.json({ candidates: [{ content: { parts: [{ text: "پاسخ از Gemini" }] } }] });
+  };
+  try {
+    const fallbackEnv = {
+      AI: { run: async () => { throw new Error("Cloudflare unavailable"); } },
+      GEMINI_API_KEY: "test-gemini-key",
+      ASSETS: env.ASSETS
+    };
+    const response = await worker.fetch(request("/api/chat", {
+      messages: [{ role: "user", content: "سلام" }]
+    }), fallbackEnv);
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.reply, "پاسخ از Gemini");
+    assert.equal(data.provider, "Google Gemini 2.5 Flash-Lite");
+    assert.equal(requested, true);
   } finally { globalThis.fetch = originalFetch; }
 });
