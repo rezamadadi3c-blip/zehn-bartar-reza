@@ -112,3 +112,39 @@ test("search reports upstream failures safely", async () => {
     assert.equal(response.status, 502);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test("web search merges Brave and Tavily results without exposing API keys", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    const target = String(url);
+    calls.push({ target, headers: options.headers || {} });
+    if (target.includes("api.search.brave.com")) {
+      return Response.json({ web: { results: [
+        { title: "Brave result", description: "A web result", url: "https://example.com/a" }
+      ] } });
+    }
+    if (target.includes("api.tavily.com")) {
+      return Response.json({ results: [
+        { title: "Tavily result", content: "Another web result", url: "https://example.org/b" }
+      ] });
+    }
+    throw new Error("Unexpected search provider");
+  };
+  try {
+    const response = await worker.fetch(request("/api/search", { query: "آزمایش وب" }), {
+      BRAVE_SEARCH_API_KEY: "server-secret-brave",
+      TAVILY_API_KEY: "server-secret-tavily"
+    });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.mode, "web");
+    assert.deepEqual(data.providers.sort(), ["Brave", "Tavily"]);
+    assert.equal(data.results.length, 2);
+    assert.equal(data.results[0].source, "Brave");
+    assert.equal(data.results[1].source, "Tavily");
+    assert.ok(calls.some(call => call.target.includes("api.search.brave.com")));
+    assert.ok(calls.some(call => call.target.includes("api.tavily.com")));
+    assert.ok(!JSON.stringify(data).includes("server-secret"));
+  } finally { globalThis.fetch = originalFetch; }
+});
