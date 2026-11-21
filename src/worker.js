@@ -23,7 +23,7 @@ export default {
             {type:"image_url",image_url:{url:"data:"+mime+";base64,"+data}}
           ]};
         }
-        const model=body.image?"@cf/moonshotai/kimi-k2.5":"@cf/meta/llama-3.1-8b-instruct";
+        const model=body.image?"@cf/moonshotai/kimi-k2.5":"@cf/zai-org/glm-4.7-flash";
         const result=await env.AI.run(model,{messages:[{role:"system",content:"تو دستیار فارسی‌زبان دقیق، ایمن و کاربردی هستی. پاسخ‌ها را به فارسی روشن و منظم بده. اگر چیزی را نمی‌دانی صریح بگو."},...normalized],max_tokens:1200});
         const reply=result?.response||result?.choices?.[0]?.message?.content||result?.result?.response;
         return reply?json({reply}):json({error:"مدل پاسخ قابل‌خواندن نداد."},502);
@@ -46,7 +46,7 @@ export default {
         else if (output instanceof ArrayBuffer) bytes=new Uint8Array(output);
         else if (output && typeof output.getReader==="function") bytes=await new Response(output).arrayBuffer();
         else return json({error:"قالب تصویر دریافتی پشتیبانی نمی‌شود."},502);
-        return new Response(bytes,{headers:{"content-type":"image/jpeg","cache-control":"no-store"}});
+        return new Response(bytes,{headers:{"content-type":"image/png","cache-control":"no-store"}});
       }
       return json({error:"مسیر API پیدا نشد."},404);
     } catch(error) { return json({error:String(error?.message||"خطا در اجرای هوش مصنوعی").slice(0,300)},502); }
