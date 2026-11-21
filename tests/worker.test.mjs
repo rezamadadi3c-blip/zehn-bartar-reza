@@ -75,6 +75,27 @@ test("image analysis uses the free-tier Gemma 4 vision model", async () => {
   assert.equal(usedModel, "@cf/google/gemma-4-26b-a4b-it");
 });
 
+test("AI diagnostics performs a real minimal model inference", async () => {
+  let model = "";
+  const diagnosticEnv = {
+    AI: { run: async (name, input) => { model = name; assert.equal(input.max_tokens, 8); return { response: "OK" }; } },
+    ASSETS: env.ASSETS
+  };
+  const response = await worker.fetch(request("/api/diagnostics", {}), diagnosticEnv);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(data.ai, true);
+  assert.equal(model, "@cf/zai-org/glm-4.7-flash");
+});
+
+test("AI diagnostics clearly reports a missing Workers AI binding", async () => {
+  const response = await worker.fetch(request("/api/diagnostics", {}), { ASSETS: env.ASSETS });
+  const data = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(data.ai, false);
+});
+
 test("unknown API paths return 404", async () => {
   const response = await worker.fetch(request("/api/missing", {}), env);
   assert.equal(response.status, 404);
