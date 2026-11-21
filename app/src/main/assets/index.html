@@ -36,9 +36,9 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <main>
 <section id="home" class="page active">
 <div class="hero"><strong>سلام. اینجا فضای کار توست.</strong><p>گفتگو، ابزارهای شخصی، یادداشت‌ها و فایل‌ها در یک محیط واحد.</p></div>
-<div class="card"><h2>دسترسی به هوش مصنوعی آنلاین</h2><p class="muted">برای استفاده فوری از یک مدل آنلاین، Gemini رسمی را در مرورگر باز کن. ورود به حساب گوگل لازم است؛ این روش نیازی به واردکردن کلید API در برنامه ندارد.</p><button class="primary" id="openGemini">بازکردن هوش مصنوعی آنلاین</button></div><div class="notice">گفتگوی داخل برنامه هنوز به مدل ابری متصل نیست؛ دکمه بالا سرویس رسمی آنلاین را جداگانه باز می‌کند.</div>
+<div class="card"><h2>دسترسی به هوش مصنوعی آنلاین</h2><p class="muted">برای استفاده فوری از یک مدل آنلاین، Gemini رسمی را در مرورگر باز کن. ورود به حساب گوگل لازم است؛ این روش نیازی به واردکردن کلید API در برنامه ندارد.</p><button class="primary" id="openGemini">بازکردن هوش مصنوعی آنلاین</button></div><div class="notice">گفتگوی داخل برنامه از طریق سرور امن ذهن برتر به مدل هوش مصنوعی متصل می‌شود.</div>
 <div class="card"><h2>گفتگوی جدید</h2><p class="muted">پیام بنویس. برای این نسخه، پیوست تصویر پشتیبانی می‌شود.</p>
-<div id="chatLog"><div class="bubble assistant">برای فعال‌شدن پاسخ‌گویی هوشمند، اتصال امن به یک مدل هوش مصنوعی لازم است. این اتصال در نسخه فعلی پیکربندی نشده.</div></div>
+<div id="chatLog"><div class="bubble assistant">سلام. پیام خود را بنویس تا از طریق سرور هوش مصنوعی پاسخ بگیری.</div></div>
 <div class="composer"><textarea id="message" placeholder="پیامت را اینجا بنویس..."></textarea><div id="fileInfo"></div>
 <div class="actions"><button id="pickFile">پیوست فایل</button><input id="file" type="file" hidden accept="image/*,.pdf,.txt,.doc,.docx"><button id="voice">گفتار</button><button class="primary" id="send">ارسال</button></div></div>
 </div>
@@ -56,7 +56,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <div class="card"><h3>حریم خصوصی</h3><p class="muted">در این نسخه اطلاعاتی به سرور هوش مصنوعی ارسال نمی‌شود. حذف داده‌های برنامه ممکن است یادداشت‌ها را پاک کند.</p><button id="clearMemory">پاک‌کردن همه یادداشت‌ها</button></div>
 </section>
 <section id="settings" class="page">
-<div class="card"><h2>تنظیمات ذهن برتر</h2><p class="muted">اتصال هوش مصنوعی به یک سرویس مدل و سرور واسط امن نیاز دارد. کلید محرمانه نباید داخل برنامه اندروید قرار بگیرد.</p>
+<div class="card"><h2>تنظیمات ذهن برتر</h2><p class="muted">اتصال هوش مصنوعی از طریق سرور امن انجام می‌شود. کلید محرمانه روی گوشی قرار نمی‌گیرد.</p>
 <div class="notice">سرور پیش‌فرض ذهن برتر تنظیم شده است. کلید محرمانه روی گوشی قرار نمی‌گیرد.</div>
 <h3>نشانی سرور هوش مصنوعی</h3><input id="apiEndpoint" inputmode="url" placeholder="https://zehn-bartar-reza.reza-madadi-3c.workers.dev"><p class="muted">در نسخه فعلی نیازی به رمز جداگانه نیست. نشانی سرور را فقط در صورت تغییر سرور ویرایش کن.</p><button class="primary" id="saveEndpoint">ذخیره تنظیمات اتصال</button><p id="connectionInfo" class="muted">هنوز سروری تنظیم نشده است.</p>
 <h3>قابلیت‌های طراحی‌شده برای مراحل بعد</h3>
@@ -74,7 +74,7 @@ let chatHistory=get('zb_chat',[]);
 function drawHistory(){ $('chatLog').innerHTML=''; if(!chatHistory.length){bubble('سلام. پیام خود را بنویس. برای پاسخ هوشمند، ابتدا نشانی سرور امن را در تنظیمات وارد کن.','assistant');return;} chatHistory.forEach(m=>bubble(m.content,m.role==='user'?'user':'assistant')); }
 drawHistory();
 const DEFAULT_ENDPOINT='https://zehn-bartar-reza.reza-madadi-3c.workers.dev';
-function updateConnection(){let ep=get('zb_endpoint',DEFAULT_ENDPOINT);$('apiEndpoint').value=ep;$('appToken').value='';$('connectionInfo').textContent='سرور پیش‌فرض آماده است؛ اتصال هنگام ارسال پیام بررسی می‌شود.';$('connectionInfo').style.color='#78e0c2';}
+function updateConnection(){let ep=get('zb_endpoint',DEFAULT_ENDPOINT);$('apiEndpoint').value=ep;$('connectionInfo').textContent='سرور پیش‌فرض آماده است؛ اتصال هنگام ارسال پیام بررسی می‌شود.';$('connectionInfo').style.color='#78e0c2';}
 $('saveEndpoint').onclick=()=>{let ep=$('apiEndpoint').value.trim();if(!/^https:\/\//i.test(ep)){alert('نشانی سرور باید با https:// شروع شود.');return;}put('zb_endpoint',ep.replace(/\/+$/,''));updateConnection();alert('نشانی سرور ذخیره شد.');};
 updateConnection();
 $('send').onclick=async()=>{let t=$('message').value.trim();let file=$('file').files[0];if(!t&&!file)return;let endpoint=get('zb_endpoint',DEFAULT_ENDPOINT);if(file && !file.type.startsWith('image/')){bubble('در حال حاضر فقط پیوست تصویر پشتیبانی می‌شود. فایل‌های دیگر را فعلاً ارسال نکن.','assistant');return;}
@@ -93,7 +93,8 @@ finally{$('send').disabled=false;$('chatLog').scrollIntoView({behavior:'smooth',
 $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('send').click();}});
 
 $('pickFile').onclick=()=>$('file').click();$('file').onchange=()=>{let f=$('file').files[0];$('fileInfo').textContent=f?'فایل انتخاب‌شده: '+f.name+' · '+Math.ceil(f.size/1024)+' کیلوبایت':'';};
-$('voice').onclick=()=>{let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('تشخیص گفتار در این نسخه یا مرورگر پشتیبانی نمی‌شود.');return;}let r=new SR();r.lang='fa-IR';r.onresult=e=>$('message').value+=' '+e.results[0][0].transcript;r.onerror=()=>alert('ورودی صوتی انجام نشد.');r.start();};\n// خواندن پاسخ با موتور گفتار دستگاه\n$('chatLog').addEventListener('click',e=>{if(e.target.classList.contains('assistant')&&window.speechSynthesis){let u=new SpeechSynthesisUtterance(e.target.textContent);u.lang='fa-IR';speechSynthesis.cancel();speechSynthesis.speak(u);}});
+$('voice').onclick=()=>{let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('تشخیص گفتار در این نسخه یا مرورگر پشتیبانی نمی‌شود.');return;}let r=new SR();r.lang='fa-IR';r.onresult=e=>$('message').value+=' '+e.results[0][0].transcript;r.onerror=()=>alert('ورودی صوتی انجام نشد.');r.start();};
+// خواندن پاسخ با موتور گفتار دستگاه\n$('chatLog').addEventListener('click',e=>{if(e.target.classList.contains('assistant')&&window.speechSynthesis){let u=new SpeechSynthesisUtterance(e.target.textContent);u.lang='fa-IR';speechSynthesis.cancel();speechSynthesis.speak(u);}});
 $('calcBtn').onclick=()=>{let s=$('calc').value.trim();if(!/^[0-9+*/().%\s-]+$/.test(s)){ $('calcResult').textContent='عبارت معتبر نیست.';return;}try{let v=Function('"use strict";return ('+s+')')();$('calcResult').textContent='نتیجه: '+v;}catch(e){$('calcResult').textContent='عبارت ریاضی قابل محاسبه نیست.';}};$('calcClear').onclick=()=>{$('calc').value='';$('calcResult').textContent='';};
 $('wordText').oninput=()=>{let t=$('wordText').value.trim();$('wordCount').textContent=t?(t.split(/\s+/).length+' کلمه · '+$('wordText').value.length+' نویسه'):'۰ کلمه · ۰ نویسه';};
 function render(){let a=get('zb_mem',[]);$('memoryList').innerHTML='';a.forEach((n,i)=>{let d=document.createElement('div');d.className='entry';let h=document.createElement('b');h.textContent=n.title;let p=document.createElement('p');p.textContent=n.body;let del=document.createElement('button');del.className='smallbtn';del.textContent='حذف';del.onclick=()=>{a.splice(i,1);put('zb_mem',a);render();};d.append(h,p,del);$('memoryList').append(d);});}
