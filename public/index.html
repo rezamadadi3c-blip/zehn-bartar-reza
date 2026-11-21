@@ -31,11 +31,15 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 <header><div class="top"><h1>ذهن برتر</h1><button id="install">نصب برنامه</button></div><p class="sub">دستیار هوشمند فارسی‌زبان · متن، تصویر و صدا</p></header>
 <div class="tools">
 <button id="newChat">گفت‌وگوی جدید</button>
+<button id="exportChat">خروجی گفتگو</button>
+<button id="importChatBtn">بازیابی گفتگو</button><input class="hidden" id="importChat" type="file" accept="application/json,.json">
+<button id="clearHistory">پاک‌کردن تاریخچه</button>
 <button id="speakToggle">خواندن پاسخ‌ها: خاموش</button>
 <button id="voiceBtn">🎙 گفتار به متن</button>
 <button id="imageMode">ساخت تصویر</button>
 <label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*"><label class="filebtn" for="audioFile">تبدیل فایل صوتی</label><input class="hidden" id="audioFile" type="file" accept="audio/*">
 </div>
+<input id="searchHistory" type="search" placeholder="جست‌وجو در همین گفتگو..." aria-label="جست‌وجو در گفتگو">
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
 <div id="status">در حال بررسی اتصال...</div>
 <div class="composer">
@@ -46,14 +50,20 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 </div>
 </main>
 <script>
-const $=s=>document.querySelector(s), chat=$('#chat'),input=$('#prompt'),statusBox=$('#status'),send=$('#send'),imageFile=$('#imageFile'),audioFile=$('#audioFile'),preview=$('#preview');
+const $=s=>document.querySelector(s), chat=$('#chat'),input=$('#prompt'),statusBox=$('#status'),send=$('#send'),imageFile=$('#imageFile'),audioFile=$('#audioFile'),preview=$('#preview'),importFile=$('#importChat');
 let history=[];let selectedImage=null;let readAloud=false;let makeImage=false;
 try{history=JSON.parse(localStorage.getItem('zb_history')||'[]');if(history.length){chat.innerHTML='';history.forEach(m=>bubble(m.content,m.role==='user'?'user':'bot',false));}}catch{history=[];}
 function bubble(text,who,scroll=true){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);if(scroll)el.scrollIntoView({behavior:'smooth',block:'end'});return el}
-function save(){try{localStorage.setItem('zb_history',JSON.stringify(history.slice(-60)));}catch{}}
+function save(){try{localStorage.setItem('zb_history',JSON.stringify(history.slice(-200)));}catch{statusBox.textContent='فضای ذخیره‌سازی مرورگر پر شده است؛ از خروجی گفتگو نسخه پشتیبان بگیر.';}}
 async function check(){try{const r=await fetch('/api/health');const d=await r.json();statusBox.textContent=d.ai?'اتصال هوش ابری برقرار است.':'سرور فعال است؛ اتصال هوش مصنوعی در انتظار تنظیم Cloudflare است.';}catch{statusBox.textContent='اتصال به سرور برقرار نشد.';}}
 check();
-$('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');};
+$('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');$('#searchHistory').value='';};
+function download(name,data,type){const blob=new Blob([data],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('#exportChat').onclick=()=>{if(!history.length){statusBox.textContent='هنوز گفتگویی برای ذخیره وجود ندارد.';return;}download('zehn-bartar-chat-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'Zehn Bartar',version:1,exportedAt:new Date().toISOString(),messages:history},null,2),'application/json');statusBox.textContent='نسخه پشتیبان گفتگو ذخیره شد.';};
+$('#importChatBtn').onclick=()=>importFile.click();
+importFile.onchange=async()=>{const file=importFile.files[0];if(!file)return;try{if(file.size>2*1024*1024)throw new Error('فایل پشتیبان بیش از ۲ مگابایت است.');const data=JSON.parse(await file.text()),items=Array.isArray(data)?data:data.messages;if(!Array.isArray(items)||items.length>500)throw new Error('ساختار فایل پشتیبان معتبر نیست.');const cleaned=items.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-200);if(!cleaned.length)throw new Error('پیام معتبری در فایل پیدا نشد.');history=cleaned;save();chat.innerHTML='';history.forEach(m=>bubble(m.content,m.role==='user'?'user':'bot',false));statusBox.textContent='گفتگو بازیابی شد.';}catch(e){statusBox.textContent=e.message||'خواندن فایل ناموفق بود.';}finally{importFile.value='';}};
+$('#clearHistory').onclick=()=>{if(!confirm('همه گفتگوهای ذخیره‌شده روی این دستگاه پاک شوند؟'))return;history=[];save();chat.innerHTML='';bubble('تاریخچه پاک شد. گفتگوی تازه را شروع کن.','bot');statusBox.textContent='تاریخچه این دستگاه پاک شد.';};
+$('#searchHistory').oninput=e=>{const q=e.target.value.trim().toLocaleLowerCase();[...chat.children].forEach(el=>{el.style.display=!q||el.textContent.toLocaleLowerCase().includes(q)?'':'none';});};
 $('#speakToggle').onclick=()=>{readAloud=!readAloud;$('#speakToggle').textContent='خواندن پاسخ‌ها: '+(readAloud?'روشن':'خاموش');if(!readAloud&&speechSynthesis)speechSynthesis.cancel();};
 $('#clearImage').onclick=()=>{selectedImage=null;imageFile.value='';preview.style.display='none';};
 imageFile.onchange=()=>{const file=imageFile.files[0];if(!file)return;if(file.size>3*1024*1024){statusBox.textContent='تصویر باید کمتر از ۳ مگابایت باشد.';imageFile.value='';return;}const reader=new FileReader();reader.onload=()=>{selectedImage=reader.result;preview.src=selectedImage;preview.style.display='block';};reader.readAsDataURL(file);};
