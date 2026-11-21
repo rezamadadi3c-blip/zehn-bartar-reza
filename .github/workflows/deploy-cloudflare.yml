@@ -36,6 +36,7 @@ jobs:
             echo "::error::The Cloudflare API token secret is empty or contains invalid characters. Re-save it without spaces or quotation marks."
             exit 1
           fi
+          echo "Normalized Cloudflare token length: $(printf '%s' "$TOKEN" | wc -c | tr -d ' ')"
           echo "::add-mask::$TOKEN"
           echo "CLOUDFLARE_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
