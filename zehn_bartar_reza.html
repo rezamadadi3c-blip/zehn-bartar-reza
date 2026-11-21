@@ -23,6 +23,8 @@ textarea{min-height:115px;resize:vertical}.row{display:flex;gap:8px;flex-wrap:wr
 .good{border-color:var(--accent)}.bad{border-color:var(--red)}.entry{padding:10px 0;border-bottom:1px solid #29364a}
 footer{position:fixed;bottom:0;left:0;right:0;background:#0d1727;padding:7px;text-align:center;color:var(--muted);font-size:11px}
 </style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1220">
 </head>
 <body>
 <header><h1>ذهن برتر رضا</h1><p>برای فکر روشن‌تر، تصمیم دقیق‌تر و گفت‌وگوی آگاهانه</p></header>
@@ -98,5 +100,9 @@ const today=new Date();$('dateLine').textContent='تاریخ: '+today.toLocaleDa
 function stats(){let n=read('zbr_notes',[]);$('stats').textContent='تعداد یادداشت‌های ذخیره‌شده: '+n.length;}
 $('saveDaily').onclick=()=>{write('zbr_daily_'+today.toISOString().slice(0,10),$('dailyText').value);$('dailySaved').textContent='گزارش امروز روی همین دستگاه ذخیره شد.';};
 $('dailyText').value=read('zbr_daily_'+today.toISOString().slice(0,10),'');renderNotes();stats();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{})); }
 </script>
 </body></html>
