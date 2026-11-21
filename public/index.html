@@ -34,7 +34,7 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 <button id="speakToggle">خواندن پاسخ‌ها: خاموش</button>
 <button id="voiceBtn">🎙 گفتار به متن</button>
 <button id="imageMode">ساخت تصویر</button>
-<label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*">
+<label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*"><label class="filebtn" for="audioFile">تبدیل فایل صوتی</label><input class="hidden" id="audioFile" type="file" accept="audio/*">
 </div>
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
 <div id="status">در حال بررسی اتصال...</div>
@@ -46,7 +46,7 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 </div>
 </main>
 <script>
-const $=s=>document.querySelector(s), chat=$('#chat'),input=$('#prompt'),statusBox=$('#status'),send=$('#send'),imageFile=$('#imageFile'),preview=$('#preview');
+const $=s=>document.querySelector(s), chat=$('#chat'),input=$('#prompt'),statusBox=$('#status'),send=$('#send'),imageFile=$('#imageFile'),audioFile=$('#audioFile'),preview=$('#preview');
 let history=[];let selectedImage=null;let readAloud=false;let makeImage=false;
 try{history=JSON.parse(localStorage.getItem('zb_history')||'[]');if(history.length){chat.innerHTML='';history.forEach(m=>bubble(m.content,m.role==='user'?'user':'bot',false));}}catch{history=[];}
 function bubble(text,who,scroll=true){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);if(scroll)el.scrollIntoView({behavior:'smooth',block:'end'});return el}
@@ -56,7 +56,7 @@ check();
 $('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');};
 $('#speakToggle').onclick=()=>{readAloud=!readAloud;$('#speakToggle').textContent='خواندن پاسخ‌ها: '+(readAloud?'روشن':'خاموش');if(!readAloud&&speechSynthesis)speechSynthesis.cancel();};
 $('#clearImage').onclick=()=>{selectedImage=null;imageFile.value='';preview.style.display='none';};
-imageFile.onchange=()=>{const file=imageFile.files[0];if(!file)return;if(file.size>3*1024*1024){statusBox.textContent='تصویر باید کمتر از ۳ مگابایت باشد.';imageFile.value='';return;}const reader=new FileReader();reader.onload=()=>{selectedImage=reader.result;preview.src=selectedImage;preview.style.display='block';};reader.readAsDataURL(file);};
+imageFile.onchange=()=>{const file=imageFile.files[0];if(!file)return;if(file.size>3*1024*1024){statusBox.textContent='تصویر باید کمتر از ۳ مگابایت باشد.';imageFile.value='';return;}const reader=new FileReader();reader.onload=()=>{selectedImage=reader.result;preview.src=selectedImage;preview.style.display='block';};reader.readAsDataURL(file);};\naudioFile.onchange=async()=>{const file=audioFile.files[0];if(!file)return;if(file.size>4*1024*1024){statusBox.textContent='فایل صوتی باید کمتر از ۴ مگابایت باشد.';audioFile.value='';return;}statusBox.textContent='در حال تبدیل صدا به متن...';const reader=new FileReader();reader.onload=async()=>{try{const r=await fetch('/api/transcribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({audio:reader.result})});const d=await r.json();if(!r.ok)throw new Error(d.error||'تبدیل صدا ناموفق بود.');input.value+=(input.value?'\\n':'')+d.text;statusBox.textContent='متن فایل صوتی آماده شد؛ می‌توانی ارسال کنی.';}catch(e){statusBox.textContent=e.message;}finally{audioFile.value='';}};reader.readAsDataURL(file);};
 $('#imageMode').onclick=()=>{makeImage=!makeImage;$('#imageMode').textContent=makeImage?'بازگشت به چت':'ساخت تصویر';input.placeholder=makeImage?'تصویری که می‌خواهی بساز را توصیف کن...':'پیامت را بنویس...';};
 async function submit(){const text=input.value.trim();if(!text&&!selectedImage)return;if(makeImage){await generateImage(text);return;}
 const user=bubble(text||'این تصویر را بررسی کن.','user');if(selectedImage){const im=document.createElement('img');im.src=selectedImage;user.appendChild(im);}
