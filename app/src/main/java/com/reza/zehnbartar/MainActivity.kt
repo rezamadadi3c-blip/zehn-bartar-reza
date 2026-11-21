@@ -20,7 +20,23 @@ class MainActivity : Activity() {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?
+            ): Boolean {
+                val url = request?.url ?: return false
+                if (url.scheme == "https" || url.scheme == "http") {
+                    return try {
+                        startActivity(Intent(Intent.ACTION_VIEW, url))
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+                return false
+            }
+        }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 view: WebView?,
