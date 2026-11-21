@@ -1,4 +1,10 @@
-const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "Content-Type",
+  "access-control-max-age": "86400"
+};
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", ...CORS_HEADERS };
 const json = (data, status=200) => new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const isBase64 = value => typeof value === "string" && value.length > 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
@@ -6,6 +12,9 @@ const isBase64 = value => typeof value === "string" && value.length > 0 && /^[A-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({
         ok: true,
@@ -98,7 +107,7 @@ export default {
         else if (output instanceof ArrayBuffer) bytes = new Uint8Array(output);
         else if (output && typeof output.getReader === "function") bytes = new Uint8Array(await new Response(output).arrayBuffer());
         else return json({ error: "قالب تصویر دریافتی پشتیبانی نمی‌شود." }, 502);
-        return new Response(bytes, { headers: { "content-type": "image/png", "cache-control": "no-store" } });
+        return new Response(bytes, { headers: { "content-type": "image/png", "cache-control": "no-store", ...CORS_HEADERS } });
       }
 
       return json({ error: "مسیر API پیدا نشد." }, 404);
