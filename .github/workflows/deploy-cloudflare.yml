@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve account ID securely from Cloudflare membership
+      - name: Resolve account ID securely from Cloudflare account access
         env:
           CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           CONFIGURED_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -43,12 +43,12 @@ jobs:
           RESPONSE=$(curl --fail --silent --show-error \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/memberships")
+            "https://api.cloudflare.com/client/v4/accounts")
           if [ "$(printf '%s' "$RESPONSE" | jq -r '.success')" != "true" ]; then
             echo "::error::Cloudflare did not authorize membership lookup. Check token permissions."
             exit 1
           fi
-          ACCOUNTS=$(printf '%s' "$RESPONSE" | jq -r '.result[]? | [.account.id, (.account.name // "")] | @tsv')
+          ACCOUNTS=$(printf '%s' "$RESPONSE" | jq -r '.result[]? | [.id, (.name // "")] | @tsv')
           MATCHED=""
           if [ -n "\${CONFIGURED_ACCOUNT_ID:-}" ]; then
             MATCHED=$(printf '%s\n' "$ACCOUNTS" | awk -F '\t' -v wanted="$CONFIGURED_ACCOUNT_ID" '$1 == wanted {print $1; exit}')
@@ -58,7 +58,7 @@ jobs:
           else
             COUNT=$(printf '%s\n' "$ACCOUNTS" | sed '/^$/d' | wc -l | tr -d ' ')
             if [ "$COUNT" -ne 1 ]; then
-              echo "::error::Could not safely select a Cloudflare account. Ensure the token has Memberships Read and the account ID secret matches one accessible account."
+              echo "::error::Could not safely select a Cloudflare account. Ensure the token has Account Settings Read and the account ID secret matches one accessible account."
               printf '%s\n' "$ACCOUNTS" | cut -f2
               exit 1
             fi
