@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827"><title>ذهن برتر</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f6fb;font-family:Tahoma,Arial,sans-serif}
+main{max-width:760px;margin:auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
+header{padding:12px 4px 20px}h1{margin:0;font-size:27px}header p{color:#aab4ca;margin:8px 0}
+#chat{flex:1;min-height:45vh;display:flex;flex-direction:column;gap:12px;padding:12px 0}
+.msg{padding:13px 15px;border-radius:15px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{background:#26395d;align-self:flex-start;max-width:90%}.bot{background:#172033;border:1px solid #28344c;align-self:stretch}
+form{display:flex;gap:8px;position:sticky;bottom:0;background:#0b1020;padding:12px 0}
+textarea{flex:1;resize:vertical;min-height:54px;max-height:160px;border-radius:12px;padding:13px;background:#151e30;color:white;border:1px solid #34415c;font:inherit}
+button{border:0;border-radius:12px;padding:0 20px;background:#6d8cff;color:#081020;font-weight:bold;font:inherit}
+#status{font-size:12px;color:#aab4ca;min-height:20px}
+</style></head>
+<body><main>
+<header><h1>ذهن برتر</h1><p>دستیار هوشمند فارسی‌زبان</p></header>
+<div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. پیام خود را بنویسید.</div></div>
+<div id="status">برای استفاده از هوش ابری، کلید API باید به‌صورت Secret در Cloudflare ثبت شود.</div>
+<form id="form"><textarea id="prompt" placeholder="پیامت را بنویس..." required></textarea><button id="send">ارسال</button></form>
+</main>
+<script>
+const form=document.querySelector('#form'), input=document.querySelector('#prompt'), chat=document.querySelector('#chat'), statusBox=document.querySelector('#status'), send=document.querySelector('#send');
+const history=[];
+function bubble(text,who){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el}
+form.addEventListener('submit',async e=>{
+ e.preventDefault();const text=input.value.trim();if(!text)return;
+ bubble(text,'user');history.push({role:'user',content:text});input.value='';send.disabled=true;statusBox.textContent='در حال دریافت پاسخ...';
+ const loading=bubble('در حال فکر کردن...','bot');
+ try{
+  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
+  const data=await res.json();loading.textContent=data.reply||data.error||'خطای نامشخص';
+  if(res.ok&&data.reply)history.push({role:'assistant',content:data.reply});
+  statusBox.textContent=res.ok?'آماده':'تنظیمات سرویس نیاز به بررسی دارد.';
+ }catch{loading.textContent='ارتباط برقرار نشد. اینترنت یا تنظیمات سرور را بررسی کنید.';statusBox.textContent='خطای اتصال';}
+ finally{send.disabled=false;input.focus();}
+});
+</script></body></html>
