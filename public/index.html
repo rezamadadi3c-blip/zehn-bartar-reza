@@ -36,7 +36,7 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 <button id="clearHistory">پاک‌کردن تاریخچه</button>
 <button id="speakToggle">خواندن پاسخ‌ها: خاموش</button>
 <button id="voiceBtn">🎙 گفتار به متن</button>
-<button id="imageMode">ساخت تصویر</button>
+<button id="imageMode">ساخت تصویر</button>\n<button id="webSearchBtn">جست‌وجوی وب‌دانشنامه</button>
 <label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*"><label class="filebtn" for="audioFile">تبدیل فایل صوتی</label><input class="hidden" id="audioFile" type="file" accept="audio/*">
 </div>
 <input id="searchHistory" type="search" placeholder="جست‌وجو در همین گفتگو..." aria-label="جست‌وجو در گفتگو">
@@ -57,7 +57,7 @@ function bubble(text,who,scroll=true){const el=document.createElement('div');el.
 function save(){try{localStorage.setItem('zb_history',JSON.stringify(history.slice(-200)));}catch{statusBox.textContent='فضای ذخیره‌سازی مرورگر پر شده است؛ از خروجی گفتگو نسخه پشتیبان بگیر.';}}
 async function check(){try{const r=await fetch('/api/health');const d=await r.json();statusBox.textContent=d.ai?'اتصال هوش ابری برقرار است.':'سرور فعال است؛ اتصال هوش مصنوعی در انتظار تنظیم Cloudflare است.';}catch{statusBox.textContent='اتصال به سرور برقرار نشد.';}}
 check();
-$('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');$('#searchHistory').value='';};
+$('#webSearchBtn').onclick=async()=>{const q=input.value.trim();if(q.length<2){statusBox.textContent='عبارت جست‌وجو را در کادر پیام بنویس.';return;}statusBox.textContent='در حال جست‌وجو در ویکی‌پدیای فارسی...';$('#webSearchBtn').disabled=true;try{const r=await fetch('/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:q})});const d=await r.json();if(!r.ok)throw new Error(d.error||'جست‌وجو ناموفق بود.');const summary=d.results.map((x,i)=>(i+1)+'. '+x.title+'\\n'+x.snippet+'\\n'+x.url).join('\\n\\n')||'نتیجه‌ای پیدا نشد.';bubble('نتایج جست‌وجو برای: '+q+'\\nمنبع: '+d.source+'\\n\\n'+summary,'bot');statusBox.textContent='جست‌وجو کامل شد.';}catch(e){statusBox.textContent=e.message;}finally{$('#webSearchBtn').disabled=false;}};\n$('#newChat').onclick=()=>{history=[];save();chat.innerHTML='';bubble('گفت‌وگوی تازه شروع شد. چه کمکی می‌توانم بکنم؟','bot');$('#searchHistory').value='';};
 function download(name,data,type){const blob=new Blob([data],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('#exportChat').onclick=()=>{if(!history.length){statusBox.textContent='هنوز گفتگویی برای ذخیره وجود ندارد.';return;}download('zehn-bartar-chat-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'Zehn Bartar',version:1,exportedAt:new Date().toISOString(),messages:history},null,2),'application/json');statusBox.textContent='نسخه پشتیبان گفتگو ذخیره شد.';};
 $('#importChatBtn').onclick=()=>importFile.click();
