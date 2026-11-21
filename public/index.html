@@ -2,7 +2,11 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827"><title>ذهن برتر</title>
+<meta name="theme-color" content="#111827"><meta name="description" content="دستیار هوشمند فارسی‌زبان ذهن برتر">
+<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ذهن برتر</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f6fb;font-family:Tahoma,Arial,sans-serif}
 main{max-width:760px;margin:auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
@@ -13,12 +17,15 @@ header{padding:12px 4px 20px}h1{margin:0;font-size:27px}header p{color:#aab4ca;m
 form{display:flex;gap:8px;position:sticky;bottom:0;background:#0b1020;padding:12px 0}
 textarea{flex:1;resize:vertical;min-height:54px;max-height:160px;border-radius:12px;padding:13px;background:#151e30;color:white;border:1px solid #34415c;font:inherit}
 button{border:0;border-radius:12px;padding:0 20px;background:#6d8cff;color:#081020;font-weight:bold;font:inherit}
+button:disabled{opacity:.55}
 #status{font-size:12px;color:#aab4ca;min-height:20px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#install{display:none;padding:8px 12px;border-radius:9px;font-size:13px}
 </style></head>
 <body><main>
-<header><h1>ذهن برتر</h1><p>دستیار هوشمند فارسی‌زبان</p></header>
+<header><div class="topbar"><h1>ذهن برتر</h1><button id="install" type="button">نصب برنامه</button></div><p>دستیار هوشمند فارسی‌زبان</p></header>
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. پیام خود را بنویسید.</div></div>
-<div id="status">برای استفاده از هوش ابری، کلید API باید به‌صورت Secret در Cloudflare ثبت شود.</div>
+<div id="status">برای فعال شدن پاسخ‌گویی هوشمند، کلید API باید به‌صورت Secret در Cloudflare ثبت شود.</div>
 <form id="form"><textarea id="prompt" placeholder="پیامت را بنویس..." required></textarea><button id="send">ارسال</button></form>
 </main>
 <script>
@@ -33,8 +40,13 @@ form.addEventListener('submit',async e=>{
   const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
   const data=await res.json();loading.textContent=data.reply||data.error||'خطای نامشخص';
   if(res.ok&&data.reply)history.push({role:'assistant',content:data.reply});
-  statusBox.textContent=res.ok?'آماده':'تنظیمات سرویس نیاز به بررسی دارد.';
+  statusBox.textContent=res.ok?'آماده':'اتصال هوش ابری هنوز تنظیم نشده یا خطا دارد.';
  }catch{loading.textContent='ارتباط برقرار نشد. اینترنت یا تنظیمات سرور را بررسی کنید.';statusBox.textContent='خطای اتصال';}
  finally{send.disabled=false;input.focus();}
 });
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
+let installPrompt;
+const installButton=document.querySelector('#install');
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;installButton.style.display='block';});
+installButton.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installButton.style.display='none';});
 </script></body></html>
