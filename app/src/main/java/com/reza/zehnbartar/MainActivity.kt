@@ -7,9 +7,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 
 class MainActivity : Activity() {
+    private lateinit var webView: WebView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val webView = WebView(this)
+        webView = WebView(this)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.webViewClient = WebViewClient()
@@ -23,13 +25,12 @@ class MainActivity : Activity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        (findViewById<WebView>(android.R.id.content).getChildAt(0) as? WebView)?.saveState(outState)
+        webView.saveState(outState)
         super.onSaveInstanceState(outState)
     }
 
     @Deprecated("Deprecated in Android")
     override fun onBackPressed() {
-        val webView = (findViewById<WebView>(android.R.id.content).getChildAt(0) as? WebView)
-        if (webView?.canGoBack() == true) webView.goBack() else super.onBackPressed()
+        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 }
