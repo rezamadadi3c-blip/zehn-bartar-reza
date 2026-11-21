@@ -147,3 +147,21 @@ test("web search merges Brave and Tavily results without exposing API keys", asy
     assert.ok(!JSON.stringify(data).includes("server-secret"));
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test("API rate limits are enforced per client IP and endpoint", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ query: { search: [] } });
+  try {
+    let last;
+    for (let i = 0; i < 21; i++) {
+      const req = new Request("https://example.test/api/search", {
+        method: "POST",
+        headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.77" },
+        body: JSON.stringify({ query: "rate test" })
+      });
+      last = await worker.fetch(req, { ASSETS: env.ASSETS });
+    }
+    assert.equal(last.status, 429);
+    assert.ok(Number(last.headers.get("retry-after")) >= 1);
+  } finally { globalThis.fetch = originalFetch; }
+});
