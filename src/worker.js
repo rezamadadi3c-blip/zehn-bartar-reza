@@ -3,9 +3,11 @@ const json = (data, status=200) => new Response(JSON.stringify(data), { status, 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/api/health") return json({ok:true,service:"zehn-bartar",ai:!!env.AI});
+    if (request.method === "GET" && url.pathname === "/api/health") return json({ok:true,service:"zehn-bartar",ai:!!env.AI,features:{chat:true,imageAnalysis:true,imageGeneration:true,transcription:true},limits:{chatMessages:30,imageBytes:3*1024*1024,audioBytes:4*1024*1024}});
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     if (request.method !== "POST") return json({error:"روش درخواست پشتیبانی نمی‌شود."},405);
+    const declaredSize=Number(request.headers.get("content-length")||0);
+    if (declaredSize>8*1024*1024) return json({error:"حجم درخواست بیش از حد مجاز است."},413);
     if (!env.AI) return json({error:"اتصال Workers AI در تنظیمات Cloudflare فعال نشده است."},503);
     let body;
     try { body=await request.json(); } catch { return json({error:"درخواست نامعتبر است."},400); }
@@ -13,11 +15,12 @@ export default {
       if (url.pathname === "/api/chat") {
         const messages=Array.isArray(body.messages)?body.messages.slice(-24):[];
         if (!messages.length) return json({error:"پیام خالی است."},400);
-        const normalized=messages.map(m=>({role:m.role==="assistant"?"assistant":"user",content:String(m.content||"").slice(0,12000)}));
+        const normalized=messages.filter(m=>m&&typeof m==="object").map(m=>({role:m.role==="assistant"?"assistant":"user",content:String(m.content||"").slice(0,10000)})).filter(m=>m.content.trim());
+        if (!normalized.length) return json({error:"متن پیام معتبر نیست."},400);
         if (body.image) {
-          const mime=String(body.mimeType||"image/jpeg");
+          const mime=String(body.mimeType||"image/jpeg").toLowerCase();
           const data=String(body.image).replace(/^data:[^,]+,/,"");
-          if (!mime.startsWith("image/")||data.length>4_500_000) return json({error:"تصویر نامعتبر یا بیش از حد بزرگ است."},413);
+          if (!["image/jpeg","image/png","image/webp"].includes(mime)||data.length>4_500_000) return json({error:"تصویر نامعتبر یا بیش از حد بزرگ است."},413);
           normalized[normalized.length-1]={role:"user",content:[
             {type:"text",text:normalized[normalized.length-1].content||"این تصویر را بررسی و توضیح بده."},
             {type:"image_url",image_url:{url:"data:"+mime+";base64,"+data}}
