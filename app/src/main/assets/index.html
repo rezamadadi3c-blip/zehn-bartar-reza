@@ -36,7 +36,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <main>
 <section id="home" class="page active">
 <div class="hero"><strong>سلام. اینجا فضای کار توست.</strong><p>گفتگو، ابزارهای شخصی، یادداشت‌ها و فایل‌ها در یک محیط واحد.</p></div>
-<div class="notice">اتصال به مدل هوش مصنوعی هنوز برقرار نشده است. این نسخه پاسخ ساختگی را به‌عنوان پاسخ هوش مصنوعی نمایش نمی‌دهد.</div>
+<div class="card"><h2>دسترسی به هوش مصنوعی آنلاین</h2><p class="muted">برای استفاده فوری از یک مدل آنلاین، Gemini رسمی را در مرورگر باز کن. ورود به حساب گوگل لازم است؛ این روش نیازی به واردکردن کلید API در برنامه ندارد.</p><button class="primary" id="openGemini">بازکردن هوش مصنوعی آنلاین</button></div><div class="notice">گفتگوی داخل برنامه هنوز به مدل ابری متصل نیست؛ دکمه بالا سرویس رسمی آنلاین را جداگانه باز می‌کند.</div>
 <div class="card"><h2>گفتگوی جدید</h2><p class="muted">پیام بنویس یا فایل انتخاب کن. تا زمان اتصال مدل، متن فقط در این دستگاه نگهداری می‌شود.</p>
 <div id="chatLog"><div class="bubble assistant">برای فعال‌شدن پاسخ‌گویی هوشمند، اتصال امن به یک مدل هوش مصنوعی لازم است. این اتصال در نسخه فعلی پیکربندی نشده.</div></div>
 <div class="composer"><textarea id="message" placeholder="پیامت را اینجا بنویس..."></textarea><div id="fileInfo"></div>
@@ -65,7 +65,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 </main>
 <nav class="nav"><button class="active" data-page="home">خانه</button><button data-page="tools">ابزارها</button><button data-page="memory">حافظه</button><button data-page="settings">تنظیمات</button></nav>
 <script>
-const $=id=>document.getElementById(id);const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};const put=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const $=id=>document.getElementById(id);$('openGemini').onclick=()=>{window.location.href='https://gemini.google.com/app';};const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};const put=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 function bubble(text,who){let d=document.createElement('div');d.className='bubble '+who;d.textContent=text;$('chatLog').appendChild(d);}
