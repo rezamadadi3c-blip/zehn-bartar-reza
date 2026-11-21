@@ -25,21 +25,56 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Verify Cloudflare credentials are configured
+      - name: Verify Cloudflare API token
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to GitHub repository Actions secrets. Never commit or share these values in chat."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN to GitHub Actions secrets."
             exit 1
           fi
+
+      - name: Resolve account ID securely from Cloudflare membership
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CONFIGURED_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/memberships")
+          if [ "$(printf '%s' "$RESPONSE" | jq -r '.success')" != "true" ]; then
+            echo "::error::Cloudflare did not authorize membership lookup. Check token permissions."
+            exit 1
+          fi
+          ACCOUNTS=$(printf '%s' "$RESPONSE" | jq -r '.result[]? | [.account.id, (.account.name // "")] | @tsv')
+          MATCHED=""
+          if [ -n "\${CONFIGURED_ACCOUNT_ID:-}" ]; then
+            MATCHED=$(printf '%s\n' "$ACCOUNTS" | awk -F '\t' -v wanted="$CONFIGURED_ACCOUNT_ID" '$1 == wanted {print $1; exit}')
+          fi
+          if [ -n "$MATCHED" ]; then
+            RESOLVED="$MATCHED"
+          else
+            COUNT=$(printf '%s\n' "$ACCOUNTS" | sed '/^$/d' | wc -l | tr -d ' ')
+            if [ "$COUNT" -ne 1 ]; then
+              echo "::error::Could not safely select a Cloudflare account. Ensure the token has Memberships Read and the account ID secret matches one accessible account."
+              printf '%s\n' "$ACCOUNTS" | cut -f2
+              exit 1
+            fi
+            RESOLVED=$(printf '%s\n' "$ACCOUNTS" | cut -f1)
+          fi
+          if ! printf '%s' "$RESOLVED" | grep -Eq '^[A-Za-z0-9_-]{10,64}$'; then
+            echo "::error::Cloudflare returned an invalid account identifier."
+            exit 1
+          fi
+          echo "Resolved one authorized Cloudflare account."
+          sed -i "1i account_id = \\"$RESOLVED\\"" wrangler.toml
 
       - name: Deploy Worker and configure Workers AI binding
         uses: cloudflare/wrangler-action@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: "4"
 
       - name: Verify production health and AI binding
@@ -56,7 +91,7 @@ jobs:
             } catch {}
             await new Promise(resolve => setTimeout(resolve, 5000));
           }
-          if (!response?.ok) throw new Error(`Health check failed: HTTP ${response?.status ?? "network error"}`);
+          if (!response?.ok) throw new Error(\`Health check failed: HTTP \${response?.status ?? "network error"}\`);
           const health = await response.json();
           console.log(JSON.stringify(health, null, 2));
           if (health.ok !== true || health.aiBinding !== true) {
