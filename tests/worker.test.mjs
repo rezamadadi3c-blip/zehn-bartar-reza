@@ -58,6 +58,23 @@ test("transcription rejects malformed audio data URLs", async () => {
   assert.equal(response.status, 413);
 });
 
+
+test("image analysis uses the free-tier Gemma 4 vision model", async () => {
+  let usedModel = "";
+  const visionEnv = {
+    AI: { run: async model => { usedModel = model; return { response: "تصویر بررسی شد" }; } },
+    ASSETS: { fetch: async () => new Response("asset") }
+  };
+  const image = "data:image/jpeg;base64," + "A".repeat(16);
+  const response = await worker.fetch(request("/api/chat", {
+    messages: [{ role: "user", content: "این چیست؟" }],
+    image,
+    mimeType: "image/jpeg"
+  }), visionEnv);
+  assert.equal(response.status, 200);
+  assert.equal(usedModel, "@cf/google/gemma-4-26b-a4b-it");
+});
+
 test("unknown API paths return 404", async () => {
   const response = await worker.fetch(request("/api/missing", {}), env);
   assert.equal(response.status, 404);
