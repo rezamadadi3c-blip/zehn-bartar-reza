@@ -13,7 +13,8 @@ const RATE_RULES = {
   "/api/chat": { limit: 20, windowMs: 60_000 },
   "/api/search": { limit: 20, windowMs: 60_000 },
   "/api/image": { limit: 3, windowMs: 60_000 },
-  "/api/transcribe": { limit: 8, windowMs: 60_000 }
+  "/api/transcribe": { limit: 8, windowMs: 60_000 },
+  "/api/diagnostics": { limit: 3, windowMs: 60_000 }
 };
 function rateLimit(request, pathname) {
   const rule = RATE_RULES[pathname];
@@ -76,6 +77,21 @@ export default {
       if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "ساختار درخواست نامعتبر است." }, 400);
     } catch {
       return json({ error: "درخواست JSON نامعتبر است." }, 400);
+    }
+    if (url.pathname === "/api/diagnostics") {
+      if (!env.AI) return json({ ok: false, ai: false, error: "اتصال Workers AI در تنظیمات Cloudflare فعال نشده است." }, 503);
+      try {
+        const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+          messages: [{ role: "user", content: "Reply with exactly: OK" }],
+          max_tokens: 8
+        });
+        const reply = result?.response || result?.choices?.[0]?.message?.content || result?.result?.response;
+        if (!reply) return json({ ok: false, ai: false, error: "مدل ابری پاسخ قابل‌خواندن نداد." }, 502);
+        return json({ ok: true, ai: true, model: "@cf/zai-org/glm-4.7-flash", reply: String(reply).slice(0, 80) });
+      } catch (error) {
+        console.error("Zehn Bartar AI diagnostic failure:", error?.message || "unknown");
+        return json({ ok: false, ai: false, error: "اتصال برقرار است، اما اجرای مدل هوش مصنوعی ناموفق بود. وضعیت مدل یا سهمیه Cloudflare را بررسی کن." }, 502);
+      }
     }
     if (url.pathname === "/api/search") {
       const query = String(body.query || "").trim().slice(0, 160);
