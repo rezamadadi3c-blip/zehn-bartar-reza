@@ -25,14 +25,93 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Verify Cloudflare API token
+      - name: Normalize and verify Cloudflare API token
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RAW_CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::Add CLOUDFLARE_API_TOKEN to GitHub Actions secrets."
+          set -euo pipefail
+          TOKEN=$(printf '%s' "$RAW_CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')
+          case "$TOKEN" in Bearer*) TOKEN="\${TOKEN#Bearer}";; bearer*) TOKEN="\${TOKEN#bearer}";; esac
+          if [ -z "$TOKEN" ] || ! printf '%s' "$TOKEN" | grep -Eq '^[A-Za-z0-9_-]+
+
+      - name: Resolve account ID securely from Cloudflare account access
+        env:
+          CONFIGURED_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          VERIFY=$(curl --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify")
+          if [ "$(printf '%s' "$VERIFY" | jq -r '.success')" != "true" ]; then
+            echo "::error::Cloudflare API token verification failed:"
+            printf '%s' "$VERIFY" | jq -r '.errors[]?.message'
             exit 1
           fi
+          curl --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts?page=1&per_page=50" \
+            -o /tmp/cloudflare-accounts.json -w "%{http_code}" > /tmp/cloudflare-status.txt
+          HTTP_STATUS=$(cat /tmp/cloudflare-status.txt)
+          RESPONSE=$(cat /tmp/cloudflare-accounts.json)
+          if [ "$HTTP_STATUS" != "200" ] || [ "$(printf '%s' "$RESPONSE" | jq -r '.success')" != "true" ]; then
+            echo "::error::Cloudflare account lookup failed (HTTP $HTTP_STATUS):"
+            printf '%s' "$RESPONSE" | jq -r '.errors[]?.message'
+            exit 1
+          fi
+          ACCOUNTS=$(printf '%s' "$RESPONSE" | jq -r '.result[]? | [.id, (.name // "")] | @tsv')
+          MATCHED=""
+          if [ -n "\${CONFIGURED_ACCOUNT_ID:-}" ]; then
+            MATCHED=$(printf '%s\n' "$ACCOUNTS" | awk -F '\t' -v wanted="$CONFIGURED_ACCOUNT_ID" '$1 == wanted {print $1; exit}')
+          fi
+          if [ -n "$MATCHED" ]; then
+            RESOLVED="$MATCHED"
+          else
+            COUNT=$(printf '%s\n' "$ACCOUNTS" | sed '/^$/d' | wc -l | tr -d ' ')
+            if [ "$COUNT" -ne 1 ]; then
+              echo "::error::Could not safely select a Cloudflare account. Ensure the token has Account Settings Read and the account ID secret matches one accessible account."
+              printf '%s\n' "$ACCOUNTS" | cut -f2
+              exit 1
+            fi
+            RESOLVED=$(printf '%s\n' "$ACCOUNTS" | cut -f1)
+          fi
+          if ! printf '%s' "$RESOLVED" | grep -Eq '^[A-Za-z0-9_-]{10,64}$'; then
+            echo "::error::Cloudflare returned an invalid account identifier."
+            exit 1
+          fi
+          echo "Resolved one authorized Cloudflare account."
+          sed -i "1i account_id = \\"$RESOLVED\\"" wrangler.toml
+
+      - name: Deploy Worker and configure Workers AI binding
+        run: npx --yes wrangler@4 deploy
+
+      - name: Verify production health and AI binding
+        env:
+          WORKER_URL: https://zehn-bartar-reza.reza-madadi-3c.workers.dev
+        run: |
+          node --input-type=module <<'NODE'
+          const url = new URL("/api/health", process.env.WORKER_URL);
+          let response;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            try {
+              response = await fetch(url);
+              if (response.ok) break;
+            } catch {}
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          if (!response?.ok) throw new Error(\`Health check failed: HTTP \${response?.status ?? "network error"}\`);
+          const health = await response.json();
+          console.log(JSON.stringify(health, null, 2));
+          if (health.ok !== true || health.aiBinding !== true) {
+            throw new Error("Worker is deployed, but the Workers AI binding is not active.");
+          }
+          NODE
+; then
+            echo "::error::The Cloudflare API token secret is empty or contains invalid characters. Re-save it without spaces or quotation marks."
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          echo "CLOUDFLARE_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Resolve account ID securely from Cloudflare account access
         env:
