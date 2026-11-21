@@ -59,6 +59,7 @@ export default {
         });
       };
       const tasks = [];
+      const providers = [];
       if (env.BRAVE_SEARCH_API_KEY) tasks.push((async () => {
         const endpoint = new URL("https://api.search.brave.com/res/v1/web/search");
         endpoint.search = new URLSearchParams({ q: query, count: "8", safesearch: "moderate" }).toString();
@@ -66,6 +67,7 @@ export default {
         if (!response.ok) throw new Error("Brave search failed: " + response.status);
         const data = await response.json();
         (data?.web?.results || []).forEach(item => add({ title: item.title, snippet: item.description, url: item.url, source: "Brave" }));
+        providers.push("Brave");
       })());
       if (env.TAVILY_API_KEY) tasks.push((async () => {
         const response = await fetch("https://api.tavily.com/search", {
@@ -76,11 +78,9 @@ export default {
         if (!response.ok) throw new Error("Tavily search failed: " + response.status);
         const data = await response.json();
         (data?.results || []).forEach(item => add({ title: item.title, snippet: item.content, url: item.url, source: "Tavily" }));
+        providers.push("Tavily");
       })());
       const outcomes = await Promise.allSettled(tasks);
-      const providers = [];
-      if (env.BRAVE_SEARCH_API_KEY) providers.push("Brave");
-      if (env.TAVILY_API_KEY) providers.push("Tavily");
       if (!results.length) {
         try {
           const endpoint = new URL("https://fa.wikipedia.org/w/api.php");
