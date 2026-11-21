@@ -40,7 +40,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <div class="card"><h2>گفتگوی جدید</h2><p class="muted">پیام بنویس. برای این نسخه، پیوست تصویر پشتیبانی می‌شود.</p>
 <div id="chatLog"><div class="bubble assistant">سلام. پیام خود را بنویس تا از طریق سرور هوش مصنوعی پاسخ بگیری.</div></div>
 <div class="composer"><textarea id="message" placeholder="پیامت را اینجا بنویس..."></textarea><div id="fileInfo"></div>
-<div class="actions"><button id="pickFile">پیوست فایل</button><input id="file" type="file" hidden accept="image/*,.pdf,.txt,.doc,.docx"><button id="voice">گفتار</button><button class="primary" id="send">ارسال</button></div></div>
+<div class="actions"><button id="pickFile">پیوست فایل</button><input id="file" type="file" hidden accept="image/jpeg,image/png,image/webp"><button id="voice">گفتار</button><button class="primary" id="send">ارسال</button></div></div>
 </div>
 <div class="grid"><button class="tile" data-go="tools"><b>ابزارهای کاربردی</b><span>محاسبه و متن</span></button><button class="tile" data-go="memory"><b>حافظه شخصی</b><span>یادداشت‌های محلی</span></button></div>
 </section>
@@ -59,8 +59,8 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <div class="card"><h2>تنظیمات ذهن برتر</h2><p class="muted">اتصال هوش مصنوعی از طریق سرور امن انجام می‌شود. کلید محرمانه روی گوشی قرار نمی‌گیرد.</p>
 <div class="notice">سرور پیش‌فرض ذهن برتر تنظیم شده است. کلید محرمانه روی گوشی قرار نمی‌گیرد.</div>
 <h3>نشانی سرور هوش مصنوعی</h3><input id="apiEndpoint" inputmode="url" placeholder="https://zehn-bartar-reza.reza-madadi-3c.workers.dev"><p class="muted">در نسخه فعلی نیازی به رمز جداگانه نیست. نشانی سرور را فقط در صورت تغییر سرور ویرایش کن.</p><button class="primary" id="saveEndpoint">ذخیره تنظیمات اتصال</button><p id="connectionInfo" class="muted">هنوز سروری تنظیم نشده است.</p>
-<h3>قابلیت‌های طراحی‌شده برای مراحل بعد</h3>
-<ul class="muted"><li>گفتگوی فارسی و چندمرحله‌ای</li><li>ورودی صوتی و پاسخ صوتی</li><li>تحلیل تصویر و فایل</li><li>جستجوی وب و ارجاع منبع</li><li>حافظه قابل مدیریت</li><li>ابزارهای محاسباتی و برنامه‌ریزی</li></ul>
+<h3>قابلیت‌های موجود در این نسخه</h3>
+<ul class="muted"><li>گفتگوی فارسی و چندمرحله‌ای</li><li>ورودی صوتی و پاسخ صوتی</li><li>تحلیل تصویر و فایل</li><li>جست‌وجوی دانشنامه و پیوند منبع</li><li>حافظه قابل مدیریت</li><li>ابزارهای محاسباتی و برنامه‌ریزی</li></ul>
 <p class="muted">نسخه برنامه: ۱.۱ · محیط آزمایشی</p>
 </div></section>
 </main>
@@ -82,7 +82,7 @@ $('send').disabled=true;let attachment=null;
 try{if(file){if(file.size>3*1024*1024)throw new Error('حجم تصویر باید کمتر از ۳ مگابایت باشد.');if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('فقط تصویر JPG، PNG یا WEBP پشتیبانی می‌شود.');attachment=await new Promise((resolve,reject)=>{let r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('خواندن فایل ناموفق بود.'));r.readAsDataURL(file);});}
 chatHistory.push({role:'user',content:t||('فایل پیوست‌شده: '+file.name)});bubble(t||('فایل پیوست‌شده: '+file.name),'user');$('message').value='';$('file').value='';$('fileInfo').textContent='';
 let wait=document.createElement('div');wait.className='bubble assistant';wait.textContent='در حال دریافت پاسخ از سرور...';$('chatLog').appendChild(wait);
-const payload={messages:chatHistory.slice(-24)};if(attachment){payload.image=attachment;payload.mimeType=file.type;}
+const payload={messages:chatHistory.slice(-24),memory:get("zb_mem",[]).slice(0,10)};if(attachment){payload.image=attachment;payload.mimeType=file.type;}
 const response=await fetch(endpoint.replace(/\/+$/,'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
 if(!response.ok){let err=await response.json().catch(()=>({}));throw new Error(err.error||('سرور خطا داد: '+response.status));}
 const data=await response.json();if(typeof data.reply!=='string'||!data.reply.trim())throw new Error('پاسخ سرور در قالب مورد انتظار نبود (فیلد reply).');
