@@ -1,0 +1,65 @@
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "wrangler.toml"
+      - ".github/workflows/deploy-cloudflare.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Verify Cloudflare credentials are configured
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to GitHub repository Actions secrets. Never commit or share these values in chat."
+            exit 1
+          fi
+
+      - name: Deploy Worker and configure Workers AI binding
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+
+      - name: Verify production health and AI binding
+        env:
+          WORKER_URL: https://zehn-bartar-reza.reza-madadi-3c.workers.dev
+        run: |
+          node --input-type=module <<'NODE'
+          const url = new URL("/api/health", process.env.WORKER_URL);
+          let response;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            try {
+              response = await fetch(url);
+              if (response.ok) break;
+            } catch {}
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          if (!response?.ok) throw new Error(`Health check failed: HTTP ${response?.status ?? "network error"}`);
+          const health = await response.json();
+          console.log(JSON.stringify(health, null, 2));
+          if (health.ok !== true || health.aiBinding !== true) {
+            throw new Error("Worker is deployed, but the Workers AI binding is not active.");
+          }
+          NODE
