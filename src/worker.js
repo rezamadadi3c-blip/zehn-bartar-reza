@@ -274,6 +274,7 @@ export default {
       }
 
       if (url.pathname === "/api/image") {
+        if (!env.AI) return json({ error: "ساخت تصویر در این نسخه به سرویس Cloudflare AI وابسته است و روی این میزبان فعال نیست." }, 503);
         const prompt = String(body.prompt || "").trim().slice(0, 1500);
         if (!prompt) return json({ error: "توضیح تصویر را وارد کنید." }, 400);
         const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt });
