@@ -2,6 +2,15 @@
   "name": "zehn-bartar",
   "version": "2.0.0",
   "private": true,
-  "scripts": { "deploy": "wrangler deploy" },
-  "devDependencies": { "wrangler": "^4.0.0" }
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
 }
