@@ -29,7 +29,7 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 </style></head>
 <body><main>
 <header><div class="top"><h1>ذهن برتر</h1><button id="install">نصب برنامه</button></div><p class="sub">دستیار هوشمند فارسی‌زبان · متن، تصویر و صدا</p></header>
-<div class="tools">
+<div class="tools"><button id="zaAutoToggle" type="button">مرکز اجرای خودکار</button>
 <button id="newChat">گفت‌وگوی جدید</button>
 <button id="exportChat">خروجی گفتگو</button>
 <button id="importChatBtn">بازیابی گفتگو</button><input class="hidden" id="importChat" type="file" accept="application/json,.json">
@@ -41,6 +41,28 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 <label class="filebtn" for="imageFile">افزودن تصویر</label><input class="hidden" id="imageFile" type="file" accept="image/*"><label class="filebtn" for="audioFile">تبدیل فایل صوتی</label><input class="hidden" id="audioFile" type="file" accept="audio/*">
 </div>
 <input id="searchHistory" type="search" placeholder="جست‌وجو در همین گفتگو..." aria-label="جست‌وجو در گفتگو">
+
+<section id="zbAutoPanel" aria-label="مرکز اجرای خودکار">
+<h2>مرکز اجرای خودکار و مجوزها</h2>
+<p class="za-muted">این بخش سیاست‌های مجاز برنامه و صف درخواست‌ها را نگه می‌دارد. تأیید یک درخواست به‌تنهایی به معنی اجرای آن در سایت یا حساب خارجی نیست؛ اتصال رسمی هر سرویس و مجوزهای خودش لازم است.</p>
+<div class="za-grid">
+<div class="za-perm"><label><input type="checkbox" id="zaCreate"> اجازه ایجاد / نوشتن</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaEdit"> اجازه ویرایش</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaDelete"> اجازه حذف با تأیید</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaExternal"> اجازه درخواست اقدام در سرویس‌های متصل</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaAutoLow"> تأیید خودکار کارهای داخلیِ کم‌خطر</label></div>
+</div>
+<p class="za-muted">حذف، ارسال نهایی، پرداخت، تغییر امنیت حساب و اقدام‌های بیرونی هرگز با گزینه تأیید خودکارِ کم‌خطر انجام نمی‌شوند.</p>
+<div class="za-form">
+<input id="zaTitle" maxlength="120" placeholder="عنوان درخواست یا کاری که دستیار باید انجام دهد">
+<textarea id="zaDetail" maxlength="2000" placeholder="شرح کار و نتیجه مورد انتظار"></textarea>
+<select id="zaAction"><option value="create">نوشتن / ایجاد</option><option value="edit">ویرایش</option><option value="delete">حذف</option><option value="external">اقدام در سرویس متصل</option></select>
+<button class="primary" id="zaAdd">ثبت درخواست در صف</button>
+</div>
+<div class="za-actions"><button id="zaRefresh">به‌روزرسانی صف</button><button id="zaClearAudit">پاک‌کردن گزارش محلی</button></div>
+<h3>درخواست‌ها</h3><div id="zaQueue" aria-live="polite"></div>
+<h3>گزارش فعالیت</h3><div id="zaAudit" class="za-muted"></div>
+</section>
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
 <div id="status">در حال بررسی اتصال...</div>
 <div class="composer">
@@ -80,4 +102,78 @@ send.onclick=submit;input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.
 $('#voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){statusBox.textContent='تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ از صفحه‌کلید صوتی گوشی استفاده کن.';return;}const rec=new SR();rec.lang='fa-IR';rec.interimResults=false;rec.onstart=()=>statusBox.textContent='گوش می‌دهم...';rec.onresult=e=>{input.value+=(input.value?' ':'')+e.results[0][0].transcript;statusBox.textContent='گفتار به متن تبدیل شد.';};rec.onerror=()=>statusBox.textContent='دسترسی میکروفون یا تشخیص گفتار با خطا روبه‌رو شد.';rec.start();};
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 let installPrompt;const installButton=$('#install');addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installButton.style.display='block';});installButton.onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installButton.style.display='none';};
-</script></body></html>
+</script>
+<style id="zb-auto-style">
+#zbAutoPanel{display:none;background:#111d30;border:1px solid #40516e;border-radius:16px;padding:14px;margin:12px 0}
+#zbAutoPanel.open{display:block}.za-muted{color:#aab8ce;font-size:12px;line-height:1.8}
+.za-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.za-perm{background:#0d1728;border:1px solid #2c3b54;border-radius:11px;padding:9px;font-size:12px}
+.za-perm label{display:flex;align-items:center;gap:8px}.za-perm input{width:auto}
+.za-form{display:grid;gap:8px;margin:12px 0}.za-form input,.za-form textarea,.za-form select{width:100%;padding:10px;border-radius:10px;background:#0b1524;color:#f4f6fb;border:1px solid #394b68;font:inherit}
+.za-form textarea{min-height:65px}.za-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.za-actions button{font-size:11px;padding:7px 10px}
+.za-item{background:#0c1728;border:1px solid #31425d;border-radius:12px;padding:10px;margin:9px 0}
+.za-status{font-size:11px;color:#9ddfc8}.za-item p{font-size:12px;color:#b8c4d7;white-space:pre-wrap}
+@media(max-width:420px){.za-grid{grid-template-columns:1fr}}
+</style>
+
+<script id="zb-auto-script">
+(()=>{
+const $=id=>document.getElementById(id);
+if(!$('zbAutoPanel'))return;
+const defaults={create:true,edit:true,remove:false,external:false,autoLow:false};
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let policy={...defaults,...read('zb_auto_policy',{})};
+let queue=read('zb_auto_queue',[]),audit=read('zb_auto_audit',[]);
+const save=()=>{write('zb_auto_policy',policy);write('zb_auto_queue',queue);write('zb_auto_audit',audit.slice(0,100));};
+const log=(text)=>{audit.unshift({text,at:new Date().toISOString()});save();};
+const label={create:'ایجاد / نوشتن',edit:'ویرایش',delete:'حذف',external:'اقدام بیرونی'};
+const state={pending:'در انتظار تصمیم',authorized:'تأیید شده؛ آماده اتصال به اجراکننده',cancelled:'لغو شده',rejected:'رد شده'};
+function sync(){ $('zaCreate').checked=policy.create;$('zaEdit').checked=policy.edit;$('zaDelete').checked=policy.remove;$('zaExternal').checked=policy.external;$('zaAutoLow').checked=policy.autoLow; }
+function render(){
+ $('zaQueue').innerHTML='';
+ if(!queue.length){$('zaQueue').textContent='درخواستی ثبت نشده است.';}
+ queue.forEach(item=>{
+  const card=document.createElement('div');card.className='za-item';
+  const h=document.createElement('b');h.textContent=item.title;
+  const meta=document.createElement('div');meta.className='za-status';meta.textContent=label[item.action]+' · '+state[item.status];
+  const p=document.createElement('p');p.textContent=item.detail||'بدون شرح تکمیلی';
+  card.append(h,meta,p);
+  const actions=document.createElement('div');actions.className='za-actions';
+  if(item.status==='pending'){
+   if(item.action==='create'&&policy.create||item.action==='edit'&&policy.edit||item.action==='delete'&&policy.remove||item.action==='external'&&policy.external){
+    const approve=document.createElement('button');approve.textContent='تأیید';approve.onclick=()=>decide(item.id,'authorized');actions.append(approve);
+   }
+   const edit=document.createElement('button');edit.textContent='ویرایش';edit.onclick=()=>editItem(item.id);actions.append(edit);
+   const reject=document.createElement('button');reject.textContent='رد';reject.onclick=()=>decide(item.id,'rejected');actions.append(reject);
+  }
+  if(item.status==='pending'||item.status==='authorized'){const cancel=document.createElement('button');cancel.textContent='لغو';cancel.onclick=()=>decide(item.id,'cancelled');actions.append(cancel);}
+  const remove=document.createElement('button');remove.textContent='حذف از صف';remove.onclick=()=>{queue=queue.filter(x=>x.id!==item.id);log('درخواست از صف حذف شد: '+item.title);save();render();};actions.append(remove);
+  card.append(actions);$('zaQueue').append(card);
+ });
+ $('zaAudit').innerHTML='';
+ if(!audit.length){$('zaAudit').textContent='هنوز گزارشی ثبت نشده است.';}
+ audit.slice(0,15).forEach(x=>{const row=document.createElement('div');row.textContent=new Date(x.at).toLocaleString('fa-IR')+' — '+x.text;$('zaAudit').append(row);});
+}
+function decide(id,status){const item=queue.find(x=>x.id===id);if(!item)return;if(status==='authorized'){const permitted=item.action==='create'?policy.create:item.action==='edit'?policy.edit:item.action==='delete'?policy.remove:policy.external;if(!permitted){alert('این نوع دسترسی در تنظیمات مجاز نشده است.');return;}}
+ item.status=status;item.updatedAt=new Date().toISOString();log((status==='authorized'?'درخواست تأیید شد: ':status==='cancelled'?'درخواست لغو شد: ':'درخواست رد شد: ')+item.title);save();render();}
+function editItem(id){const item=queue.find(x=>x.id===id);if(!item||item.status!=='pending')return;const title=prompt('عنوان جدید',item.title);if(title===null)return;const detail=prompt('شرح جدید',item.detail||'');if(detail===null)return;item.title=title.trim().slice(0,120)||item.title;item.detail=detail.slice(0,2000);item.updatedAt=new Date().toISOString();log('درخواست ویرایش شد: '+item.title);save();render();}
+['zaCreate','zaEdit','zaDelete','zaExternal','zaAutoLow'].forEach(id=>$(id).onchange=()=>{
+ policy={create:$('zaCreate').checked,edit:$('zaEdit').checked,remove:$('zaDelete').checked,external:$('zaExternal').checked,autoLow:$('zaAutoLow').checked};save();log('سیاست‌های مجوز تغییر کرد.');render();
+});
+$('zaAdd').onclick=()=>{
+ const title=$('zaTitle').value.trim(),detail=$('zaDetail').value.trim(),action=$('zaAction').value;
+ if(!title){alert('عنوان درخواست را وارد کن.');return;}
+ const allowed=action==='create'?policy.create:action==='edit'?policy.edit:action==='delete'?policy.remove:policy.external;
+ const item={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),title,detail,action,status:'pending',createdAt:new Date().toISOString()};
+ if(!allowed){item.status='pending';}
+ if(policy.autoLow&&(action==='create'||action==='edit')&&allowed){item.status='authorized';log('درخواست کم‌خطر طبق سیاست خودکار تأیید شد: '+title);}
+ else log('درخواست جدید ثبت شد و منتظر تصمیم است: '+title);
+ queue.unshift(item);save();$('zaTitle').value='';$('zaDetail').value='';render();
+};
+$('zaRefresh').onclick=render;$('zaClearAudit').onclick=()=>{if(confirm('گزارش محلی پاک شود؟')){audit=[];save();render();}};
+const toggle=$('zaAutoToggle');if(toggle)toggle.onclick=()=>{$('zbAutoPanel').classList.toggle('open');};
+sync();render();
+})();
+</script>
+</body></html>
