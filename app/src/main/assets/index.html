@@ -52,14 +52,14 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <div class="za-perm"><label><input type="checkbox" id="zaCreate"> اجازه ایجاد / نوشتن</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaEdit"> اجازه ویرایش</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaDelete"> اجازه حذف با تأیید</label></div>
-<div class="za-perm"><label><input type="checkbox" id="zaExternal"> اجازه درخواست اقدام در سرویس‌های متصل</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaExternal"> اجازه درخواست اقدام در سرویس‌های متصل</label></div>\n<div class="za-perm"><label><input type="checkbox" id="zaSearch" checked> اجازه جست‌وجوی وب</label></div>\n<div class="za-perm"><label><input type="checkbox" id="zaOpen"> اجازه بازکردن پیوند</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaAutoLow"> تأیید خودکار کارهای داخلیِ کم‌خطر</label></div>
 </div>
 <p class="za-muted">حذف، ارسال نهایی، پرداخت، تغییر امنیت حساب و اقدام‌های بیرونی هرگز با گزینه تأیید خودکارِ کم‌خطر انجام نمی‌شوند.</p>
 <div class="za-form">
 <input id="zaTitle" maxlength="120" placeholder="عنوان درخواست یا کاری که دستیار باید انجام دهد">
 <textarea id="zaDetail" maxlength="2000" placeholder="شرح کار و نتیجه مورد انتظار"></textarea>
-<select id="zaAction"><option value="create">نوشتن / ایجاد</option><option value="edit">ویرایش</option><option value="delete">حذف</option><option value="external">اقدام در سرویس متصل</option></select>
+<select id="zaAction"><option value="search">جست‌وجوی وب</option><option value="open">بازکردن پیوند</option><option value="create">ذخیره یادداشت</option><option value="edit">ویرایش یادداشت</option><option value="delete">حذف یادداشت</option><option value="external">اقدام در سرویس خارجی (نیازمند اتصال)</option></select>
 <button class="primary" id="zaAdd">ثبت درخواست در صف</button>
 </div>
 <div class="za-actions"><button id="zaRefresh">به‌روزرسانی صف</button><button id="zaClearAudit">پاک‌کردن گزارش محلی</button></div>
@@ -154,16 +154,16 @@ $('clearMemory').onclick=()=>{if(confirm('همه یادداشت‌های ذخی�
 (()=>{
 const $=id=>document.getElementById(id);
 if(!$('zbAutoPanel'))return;
-const defaults={create:true,edit:true,remove:false,external:false,autoLow:false};
+const defaults={create:true,edit:true,remove:false,external:false,search:true,open:false,autoLow:false};
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 let policy={...defaults,...read('zb_auto_policy',{})};
 let queue=read('zb_auto_queue',[]),audit=read('zb_auto_audit',[]);
 const save=()=>{write('zb_auto_policy',policy);write('zb_auto_queue',queue);write('zb_auto_audit',audit.slice(0,100));};
 const log=(text)=>{audit.unshift({text,at:new Date().toISOString()});save();};
-const label={create:'ایجاد / نوشتن',edit:'ویرایش',delete:'حذف',external:'اقدام بیرونی'};
-const state={pending:'در انتظار تصمیم',authorized:'تأیید شده؛ آماده اتصال به اجراکننده',cancelled:'لغو شده',rejected:'رد شده'};
-function sync(){ $('zaCreate').checked=policy.create;$('zaEdit').checked=policy.edit;$('zaDelete').checked=policy.remove;$('zaExternal').checked=policy.external;$('zaAutoLow').checked=policy.autoLow; }
+const label={create:'ذخیره یادداشت',edit:'ویرایش یادداشت',delete:'حذف یادداشت',external:'اقدام در سرویس خارجی',search:'جست‌وجوی وب',open:'بازکردن پیوند'};
+const state={pending:'در انتظار تصمیم',authorized:'تأیید شده؛ آماده اجرا',executed:'اجرا شد',cancelled:'لغو شد',rejected:'رد شد'};
+function sync(){ $('zaCreate').checked=policy.create;$('zaEdit').checked=policy.edit;$('zaDelete').checked=policy.remove;$('zaExternal').checked=policy.external;$('zaSearch').checked=policy.search;$('zaOpen').checked=policy.open;$('zaAutoLow').checked=policy.autoLow; }
 function render(){
  $('zaQueue').innerHTML='';
  if(!queue.length){$('zaQueue').textContent='درخواستی ثبت نشده است.';}
@@ -181,7 +181,7 @@ function render(){
    const edit=document.createElement('button');edit.textContent='ویرایش';edit.onclick=()=>editItem(item.id);actions.append(edit);
    const reject=document.createElement('button');reject.textContent='رد';reject.onclick=()=>decide(item.id,'rejected');actions.append(reject);
   }
-  if(item.status==='pending'||item.status==='authorized'){const cancel=document.createElement('button');cancel.textContent='لغو';cancel.onclick=()=>decide(item.id,'cancelled');actions.append(cancel);}
+  if(item.status==='authorized'){const run=document.createElement('button');run.className='primary';run.textContent='اجرای درخواست';run.onclick=()=>executeApproved(item.id);actions.append(run);}\n  if(item.status==='pending'||item.status==='authorized'){const cancel=document.createElement('button');cancel.textContent='لغو';cancel.onclick=()=>decide(item.id,'cancelled');actions.append(cancel);}
   const remove=document.createElement('button');remove.textContent='حذف از صف';remove.onclick=()=>{queue=queue.filter(x=>x.id!==item.id);log('درخواست از صف حذف شد: '+item.title);save();render();};actions.append(remove);
   card.append(actions);$('zaQueue').append(card);
  });
@@ -189,19 +189,19 @@ function render(){
  if(!audit.length){$('zaAudit').textContent='هنوز گزارشی ثبت نشده است.';}
  audit.slice(0,15).forEach(x=>{const row=document.createElement('div');row.textContent=new Date(x.at).toLocaleString('fa-IR')+' — '+x.text;$('zaAudit').append(row);});
 }
-function decide(id,status){const item=queue.find(x=>x.id===id);if(!item)return;if(status==='authorized'){const permitted=item.action==='create'?policy.create:item.action==='edit'?policy.edit:item.action==='delete'?policy.remove:policy.external;if(!permitted){alert('این نوع دسترسی در تنظیمات مجاز نشده است.');return;}}
+function permitted(action){return action==='create'?policy.create:action==='edit'?policy.edit:action==='delete'?policy.remove:action==='search'?policy.search:action==='open'?policy.open:policy.external;}\nfunction decide(id,status){const item=queue.find(x=>x.id===id);if(!item)return;if(status==='authorized'&&!permitted(item.action)){alert('این نوع دسترسی در تنظیمات مجاز نشده است.');return;}
  item.status=status;item.updatedAt=new Date().toISOString();log((status==='authorized'?'درخواست تأیید شد: ':status==='cancelled'?'درخواست لغو شد: ':'درخواست رد شد: ')+item.title);save();render();}
-function editItem(id){const item=queue.find(x=>x.id===id);if(!item||item.status!=='pending')return;const title=prompt('عنوان جدید',item.title);if(title===null)return;const detail=prompt('شرح جدید',item.detail||'');if(detail===null)return;item.title=title.trim().slice(0,120)||item.title;item.detail=detail.slice(0,2000);item.updatedAt=new Date().toISOString();log('درخواست ویرایش شد: '+item.title);save();render();}
-['zaCreate','zaEdit','zaDelete','zaExternal','zaAutoLow'].forEach(id=>$(id).onchange=()=>{
- policy={create:$('zaCreate').checked,edit:$('zaEdit').checked,remove:$('zaDelete').checked,external:$('zaExternal').checked,autoLow:$('zaAutoLow').checked};save();log('سیاست‌های مجوز تغییر کرد.');render();
+function editItem(id){const item=queue.find(x=>x.id===id);if(!item||item.status!=='pending')return;const title=prompt('عنوان جدید',item.title);if(title===null)return;const detail=prompt('شرح جدید',item.detail||'');if(detail===null)return;item.title=title.trim().slice(0,120)||item.title;item.detail=detail.slice(0,2000);item.updatedAt=new Date().toISOString();log('درخواست ویرایش شد: '+item.title);save();render();}\nasync function executeApproved(id){const item=queue.find(x=>x.id===id);if(!item||item.status!=='authorized')return;if(!permitted(item.action)){alert('مجوز این اقدام فعال نیست.');return;}try{if(item.action==='search'){const query=(item.detail||item.title).trim();if(query.length<2)throw new Error('عبارت جست‌وجو کوتاه است.');$('webQuery').value=query;go('tools');$('webSearch').click();item.result='جست‌وجوی وب به ابزارها ارسال شد.';}else if(item.action==='open'){const raw=(item.detail||item.title).trim();const url=new URL(raw);if(!['https:','http:'].includes(url.protocol))throw new Error('فقط پیوند HTTP یا HTTPS مجاز است.');const opened=window.open(url.href,'_blank','noopener,noreferrer');if(!opened)throw new Error('مرورگر اجازه بازکردن پیوند را نداد.');item.result='پیوند در مرورگر باز شد.';}else if(item.action==='create'){if(!item.detail.trim())throw new Error('برای ذخیره یادداشت، شرح کار را بنویس.');save(item.title,item.detail);item.result='یادداشت در حافظه محلی ذخیره شد.';}else if(item.action==='edit'){const notes=get('zb_mem',[]);const idx=notes.findIndex(n=>n.title.trim().toLowerCase()===item.title.trim().toLowerCase());if(idx<0)throw new Error('یادداشتی با این عنوان پیدا نشد. عنوان باید دقیقاً برابر باشد.');if(!item.detail.trim())throw new Error('متن جدید یادداشت خالی است.');notes[idx].body=item.detail;notes[idx].date=new Date().toISOString();put('zb_mem',notes);render();item.result='یادداشت محلی ویرایش شد.';}else if(item.action==='delete'){const notes=get('zb_mem',[]);const idx=notes.findIndex(n=>n.title.trim().toLowerCase()===item.title.trim().toLowerCase());if(idx<0)throw new Error('یادداشتی با این عنوان پیدا نشد.');if(!confirm('یادداشت «'+notes[idx].title+'» برای همیشه از حافظه این گوشی حذف شود؟'))return;notes.splice(idx,1);put('zb_mem',notes);render();item.result='یادداشت محلی حذف شد.';}else{throw new Error('این اقدام خارجی هنوز اجراکننده متصل ندارد؛ فقط ثبت و تأیید آن ممکن است.');}item.status='executed';item.updatedAt=new Date().toISOString();log('درخواست اجرا شد: '+item.title+' — '+(item.result||''));save();render();}catch(e){alert(e.message||'اجرای درخواست ناموفق بود.');log('اجرای درخواست ناموفق بود: '+item.title+' — '+(e.message||''));render();}}
+['zaCreate','zaEdit','zaDelete','zaExternal','zaSearch','zaOpen','zaAutoLow'].forEach(id=>$(id).onchange=()=>{
+ policy={...policy,create:$('zaCreate').checked,edit:$('zaEdit').checked,remove:$('zaDelete').checked,external:$('zaExternal').checked,search:$('zaSearch').checked,open:$('zaOpen').checked,autoLow:$('zaAutoLow').checked};save();log('سیاست‌های مجوز تغییر کرد.');render();
 });
 $('zaAdd').onclick=()=>{
  const title=$('zaTitle').value.trim(),detail=$('zaDetail').value.trim(),action=$('zaAction').value;
  if(!title){alert('عنوان درخواست را وارد کن.');return;}
- const allowed=action==='create'?policy.create:action==='edit'?policy.edit:action==='delete'?policy.remove:policy.external;
+ const allowed=permitted(action);
  const item={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),title,detail,action,status:'pending',createdAt:new Date().toISOString()};
  if(!allowed){item.status='pending';}
- if(policy.autoLow&&(action==='create'||action==='edit')&&allowed){item.status='authorized';log('درخواست کم‌خطر طبق سیاست خودکار تأیید شد: '+title);}
+ if(policy.autoLow&&(action==='create'||action==='edit'||action==='search')&&allowed){item.status='authorized';log('درخواست کم‌خطر طبق سیاست خودکار تأیید شد: '+title);}
  else log('درخواست جدید ثبت شد و منتظر تصمیم است: '+title);
  queue.unshift(item);save();$('zaTitle').value='';$('zaDetail').value='';render();
 };
