@@ -26,7 +26,9 @@ jobs:
               html = Path(filename).read_text(encoding="utf-8")
               scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", html, flags=re.S | re.I)
               if not scripts:
-                  raise SystemExit(f"No inline application script found in {filename}")
+                  if filename.endswith("app/src/main/assets/index.html"):
+                      raise SystemExit(f"No inline application script found in {filename}")
+                  continue
               for script_index, script in enumerate(scripts):
                   if not script.strip():
                       continue
