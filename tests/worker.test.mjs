@@ -123,6 +123,32 @@ test("AI diagnostics performs a real minimal model inference", async () => {
   assert.equal(model, "@cf/zai-org/glm-4.7-flash");
 });
 
+test("AI diagnostics can be opened with GET and performs a real model inference", async () => {
+  let model = "";
+  const diagnosticEnv = {
+    AI: { run: async (name, input) => {
+      model = name;
+      assert.equal(input.max_tokens, 1400);
+      return { response: "OK" };
+    } },
+    ASSETS: env.ASSETS
+  };
+  const response = await worker.fetch(new Request("https://example.test/api/diagnostics"), diagnosticEnv);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(data.ai, true);
+  assert.equal(data.reply, "OK");
+  assert.equal(model, "@cf/zai-org/glm-4.7-flash");
+});
+
+test("GET AI diagnostics reports a missing provider", async () => {
+  const response = await worker.fetch(new Request("https://example.test/api/diagnostics"), { ASSETS: env.ASSETS });
+  const data = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(data.ai, false);
+});
+
 test("AI diagnostics clearly reports a missing Workers AI binding", async () => {
   const response = await worker.fetch(request("/api/diagnostics", {}), { ASSETS: env.ASSETS });
   const data = await response.json();
