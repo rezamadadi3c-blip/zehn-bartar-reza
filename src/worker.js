@@ -14,7 +14,8 @@ const RATE_RULES = {
   "/api/search": { limit: 20, windowMs: 60_000 },
   "/api/image": { limit: 3, windowMs: 60_000 },
   "/api/transcribe": { limit: 8, windowMs: 60_000 },
-  "/api/diagnostics": { limit: 3, windowMs: 60_000 }
+  "/api/diagnostics": { limit: 3, windowMs: 60_000 },
+  "/api/trading/analysis": { limit: 20, windowMs: 60_000 }
 };
 
 async function callGemini(env, messages, imageData) {
@@ -79,6 +80,95 @@ async function runChatProviders(env, messages, imageData) {
   throw new Error(errors.join(" | ") || "No AI provider configured");
 }
 
+
+const TRADING_ASSETS = {
+  BTC: "bitcoin", ETH: "ethereum", SOL: "solana", XRP: "ripple",
+  DOGE: "dogecoin", ADA: "cardano", TON: "the-open-network",
+  BNB: "binancecoin", LTC: "litecoin", TRX: "tron"
+};
+function mean(values) { return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null; }
+function ema(values, period) {
+  if (!values.length) return [];
+  const alpha = 2 / (period + 1);
+  const result = [values[0]];
+  for (let i = 1; i < values.length; i++) result.push(values[i] * alpha + result[i - 1] * (1 - alpha));
+  return result;
+}
+function rsi(values, period = 14) {
+  if (values.length <= period) return null;
+  let gains = 0, losses = 0;
+  for (let i = values.length - period; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+    if (change > 0) gains += change; else losses -= change;
+  }
+  if (losses === 0) return gains === 0 ? 50 : 100;
+  const rs = (gains / period) / (losses / period);
+  return 100 - (100 / (1 + rs));
+}
+async function getTradingAnalysis(env, symbol) {
+  const coinId = TRADING_ASSETS[symbol];
+  if (!coinId) return { error: "نماد پشتیبانی نمی‌شود. یکی از BTC، ETH، SOL، XRP، DOGE، ADA، TON، BNB، LTC یا TRX را انتخاب کن." , status: 400 };
+  const headers = { "accept": "application/json" };
+  if (env.COINGECKO_DEMO_API_KEY) headers["x-cg-demo-api-key"] = env.COINGECKO_DEMO_API_KEY;
+  const base = "https://api.coingecko.com/api/v3";
+  const [marketResponse, historyResponse] = await Promise.all([
+    fetch(base + "/coins/markets?" + new URLSearchParams({
+      vs_currency: "usd", ids: coinId, price_change_percentage: "24h,7d", precision: "full"
+    }), { headers, signal: AbortSignal.timeout(12000) }),
+    fetch(base + "/coins/" + encodeURIComponent(coinId) + "/market_chart?" + new URLSearchParams({
+      vs_currency: "usd", days: "90"
+    }), { headers, signal: AbortSignal.timeout(12000) })
+  ]);
+  if (!marketResponse.ok || !historyResponse.ok) {
+    const status = marketResponse.status === 429 || historyResponse.status === 429 ? 429 : 502;
+    return { error: status === 429 ? "سهمیه دریافت داده بازار موقتاً تمام شده است؛ کمی بعد دوباره تلاش کن." : "منبع داده بازار پاسخ معتبر نداد؛ اتصال یا محدودیت سرویس را بررسی کن.", status };
+  }
+  const [markets, history] = await Promise.all([marketResponse.json(), historyResponse.json()]);
+  const market = Array.isArray(markets) ? markets[0] : null;
+  if (!market || !Array.isArray(history?.prices) || history.prices.length < 30) {
+    return { error: "داده کافی برای تحلیل این نماد دریافت نشد.", status: 502 };
+  }
+  const daily = new Map();
+  for (const point of history.prices) {
+    if (!Array.isArray(point) || !Number.isFinite(Number(point[0])) || !Number.isFinite(Number(point[1]))) continue;
+    daily.set(new Date(Number(point[0])).toISOString().slice(0, 10), Number(point[1]));
+  }
+  const series = [...daily.entries()].map(([date, price]) => ({ date, price }));
+  const closes = series.map(point => point.price);
+  if (closes.length < 30) return { error: "تعداد داده‌های تاریخی برای تحلیل کافی نیست.", status: 502 };
+  const last = closes[closes.length - 1];
+  const sma20 = mean(closes.slice(-20));
+  const sma50 = closes.length >= 50 ? mean(closes.slice(-50)) : null;
+  const ema12 = ema(closes, 12), ema26 = ema(closes, 26);
+  const macdSeries = ema12.map((value, index) => value - ema26[index]);
+  const macdSignal = ema(macdSeries, 9);
+  const currentRsi = rsi(closes, 14);
+  let score = 0;
+  if (last > sma20) score++;
+  if (sma50 !== null && sma20 > sma50) score++;
+  if (currentRsi !== null && currentRsi > 50 && currentRsi < 70) score++;
+  if (macdSeries.at(-1) > macdSignal.at(-1)) score++;
+  const trend = score >= 3 ? "مثبت" : score <= 1 ? "منفی" : "خنثی";
+  return {
+    symbol, coinId, name: market.name, currency: "USD",
+    market: {
+      price: Number(market.current_price), marketCap: Number(market.market_cap),
+      volume24h: Number(market.total_volume),
+      change24h: Number(market.price_change_percentage_24h_in_currency ?? market.price_change_percentage_24h),
+      change7d: Number(market.price_change_percentage_7d_in_currency ?? market.price_change_percentage_7d)
+    },
+    indicators: {
+      trend, score, rsi14: currentRsi, sma20, sma50,
+      macd: macdSeries.at(-1), macdSignal: macdSignal.at(-1)
+    },
+    history: series.slice(-90),
+    source: "CoinGecko",
+    sourceUrl: "https://www.coingecko.com/en/coins/" + coinId,
+    fetchedAt: new Date().toISOString(),
+    disclaimer: "تحلیل آماری گذشته‌نگر است؛ سیگنال قطعی یا تضمین سود نیست. این API فقط داده و تحلیل می‌دهد و سفارش واقعی ثبت نمی‌کند."
+  };
+}
+
 function rateLimit(request, pathname) {
   const rule = RATE_RULES[pathname];
   const ip = request.headers.get("CF-Connecting-IP");
@@ -110,6 +200,19 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+    if (request.method === "GET" && url.pathname === "/api/trading/analysis") {
+      const limited = rateLimit(request, url.pathname);
+      if (limited) return limited;
+      const symbol = String(url.searchParams.get("symbol") || "BTC").trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8);
+      try {
+        const result = await getTradingAnalysis(env, symbol);
+        if (result.error) return json({ error: result.error }, result.status);
+        return json(result, 200, { "cache-control": "public, max-age=30, stale-while-revalidate=60" });
+      } catch (error) {
+        console.error("Trading market data failure:", error?.message || "unknown");
+        return json({ error: "دریافت داده بازار ناموفق بود. کمی بعد دوباره تلاش کن." }, 502);
+      }
     }
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({
