@@ -9,6 +9,9 @@ import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
+import android.view.Gravity
+import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -70,7 +73,21 @@ class MainActivity : Activity() {
                 }
             }
         }
-        setContentView(webView)
+        val root = FrameLayout(this)
+        root.addView(webView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        val lockButton = Button(this).apply {
+            text = "قفل"
+            textSize = 11f
+            setOnClickListener { unlocked = false; showLockGate() }
+        }
+        val lockParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP or Gravity.END
+        ).apply { topMargin = 10; marginEnd = 10 }
+        root.addView(lockButton, lockParams)
+        setContentView(root)
         if (savedInstanceState == null) {
             webView.loadUrl("file:///android_asset/index.html")
         } else {
