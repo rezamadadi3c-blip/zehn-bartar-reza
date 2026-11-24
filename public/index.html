@@ -63,6 +63,26 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 <h3>درخواست‌ها</h3><div id="zaQueue" aria-live="polite"></div>
 <h3>گزارش فعالیت</h3><div id="zaAudit" class="za-muted"></div>
 </section>
+<section id="zbMemoryPanel" aria-label="حافظه شخصی">
+<h2>حافظه شخصی</h2>
+<p class="za-muted">یادداشت‌هایی که اینجا ذخیره می‌کنی روی همین دستگاه می‌مانند و هنگام گفتگو برای پاسخ بهتر به هوش مصنوعی فرستاده می‌شوند. این نسخه هنوز همگام‌سازی Google Drive ندارد.</p>
+<div class="za-form">
+<input id="zbMemoryTitle" maxlength="100" placeholder="عنوان یادداشت">
+<textarea id="zbMemoryBody" maxlength="1200" placeholder="اطلاعاتی که می‌خواهی در گفتگوهای بعدی به خاطر سپرده شود"></textarea>
+<button class="primary" id="zbMemoryAdd" type="button">ذخیره در حافظه</button>
+</div>
+<div id="zbMemoryList" aria-live="polite"></div>
+</section>
+<section id="zbEvolution" aria-label="یادگیری و ارتقای برنامه">
+<h2>🧠 یادگیری و ارتقای ذهن برتر</h2>
+<p class="evo-note">آموخته‌ها و پیشنهادهای ارتقا روی همین دستگاه ذخیره می‌شوند. این بخش فعلاً حافظه و مدیریت پیشنهادهاست؛ تغییر کد یا انتشار نسخه فقط پس از بررسی، آزمون و تأیید انجام می‌شود.</p>
+<div class="evo-grid">
+  <div><label for="evoMemory">آموخته یا ترجیحی که باید حفظ شود</label><textarea id="evoMemory" placeholder="مثلاً پاسخ‌ها کوتاه و فارسی باشند..." maxlength="1500"></textarea><button class="primary" id="evoSaveMemory">ذخیره آموخته</button></div>
+  <div><label for="evoIdea">قابلیت یا ارتقای پیشنهادی</label><textarea id="evoIdea" placeholder="مثلاً افزودن اتصال امن به تقویم..." maxlength="1500"></textarea><button id="evoAddIdea">ثبت پیشنهاد ارتقا</button></div>
+</div>
+<div class="evo-columns"><div><h3>حافظه آموخته‌ها</h3><div id="evoMemories" aria-live="polite"></div></div><div><h3>صف ارتقاها</h3><div id="evoIdeas" aria-live="polite"></div></div></div>
+<p class="evo-note">امنیت: برنامه اجازه ندارد بی‌اجازه کد خودش را تغییر دهد، اطلاعات حساس را ذخیره کند یا تغییر تأییدنشده‌ای را منتشر کند.</p>
+</section>
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
 <div id="status">در حال بررسی اتصال...</div>
 <div class="composer">
@@ -96,7 +116,7 @@ $('#imageMode').onclick=()=>{makeImage=!makeImage;$('#imageMode').textContent=ma
 async function submit(){const text=input.value.trim();if(!text&&!selectedImage)return;if(makeImage){await generateImage(text);return;}
 const user=bubble(text||'این تصویر را بررسی کن.','user');if(selectedImage){const im=document.createElement('img');im.src=selectedImage;user.appendChild(im);}
 history.push({role:'user',content:text||'این تصویر را بررسی کن.'});save();input.value='';send.disabled=true;statusBox.textContent='در حال دریافت پاسخ...';const loading=bubble('در حال پردازش...','bot');
-try{const payload={messages:history};if(selectedImage){payload.image=selectedImage;payload.mimeType=selectedImage.slice(5,selectedImage.indexOf(';'));}const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();loading.textContent=d.reply||d.error||'خطای نامشخص';if(r.ok&&d.reply){history.push({role:'assistant',content:d.reply});save();if(readAloud&&'speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(d.reply));}}statusBox.textContent=r.ok?'آماده':'سرویس خطا داد.';}catch{loading.textContent='ارتباط با سرور برقرار نشد.';statusBox.textContent='خطای اتصال';}finally{selectedImage=null;imageFile.value='';preview.style.display='none';send.disabled=false;input.focus();}}
+try{const payload={messages:history,memory:loadZbMemory().slice(0,10)};if(selectedImage){payload.image=selectedImage;payload.mimeType=selectedImage.slice(5,selectedImage.indexOf(';'));}const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();loading.textContent=d.reply||d.error||'خطای نامشخص';if(r.ok&&d.reply){history.push({role:'assistant',content:d.reply});save();if(readAloud&&'speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(d.reply));}}statusBox.textContent=r.ok?'آماده':'سرویس خطا داد.';}catch{loading.textContent='ارتباط با سرور برقرار نشد.';statusBox.textContent='خطای اتصال';}finally{selectedImage=null;imageFile.value='';preview.style.display='none';send.disabled=false;input.focus();}}
 async function generateImage(prompt){if(!prompt){statusBox.textContent='اول توضیح تصویر را بنویس.';return;}send.disabled=true;statusBox.textContent='در حال ساخت تصویر...';const msg=bubble('در حال ساخت تصویر...','bot');try{const r=await fetch('/api/image',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt})});if(!r.ok){const d=await r.json();throw new Error(d.error||'ساخت تصویر ناموفق بود.');}const blob=await r.blob(),url=URL.createObjectURL(blob);msg.textContent='تصویر ساخته شد.';const img=document.createElement('img');img.id='imageResult';img.src=url;msg.appendChild(img);statusBox.textContent='تصویر آماده است.';}catch(e){msg.textContent=e.message;statusBox.textContent='ساخت تصویر انجام نشد.';}finally{send.disabled=false;}}
 send.onclick=submit;input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
 $('#voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){statusBox.textContent='تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود؛ از صفحه‌کلید صوتی گوشی استفاده کن.';return;}const rec=new SR();rec.lang='fa-IR';rec.interimResults=false;rec.onstart=()=>statusBox.textContent='گوش می‌دهم...';rec.onresult=e=>{input.value+=(input.value?' ':'')+e.results[0][0].transcript;statusBox.textContent='گفتار به متن تبدیل شد.';};rec.onerror=()=>statusBox.textContent='دسترسی میکروفون یا تشخیص گفتار با خطا روبه‌رو شد.';rec.start();};
@@ -176,4 +196,25 @@ const toggle=$('zaAutoToggle');if(toggle)toggle.onclick=()=>{$('zbAutoPanel').cl
 sync();render();
 })();
 </script>
-</body></html>
+<style id="zb-memory-style">
+#zbMemoryPanel{background:#111d30;border:1px solid #40516e;border-radius:16px;padding:14px;margin:12px 0}
+#zbMemoryPanel h2{font-size:18px;margin:0 0 8px}
+#zbMemoryList{display:grid;gap:8px;margin-top:10px}
+.zb-memory-item{background:#0c1728;border:1px solid #31425d;border-radius:11px;padding:10px}
+.zb-memory-item b{display:block;margin-bottom:5px}
+.zb-memory-item p{font-size:12px;line-height:1.7;color:#c1cce0;white-space:pre-wrap;margin:4px 0 9px}
+.zb-memory-item button{font-size:11px;padding:6px 9px}
+</style>
+<script id="zb-memory-script">
+(()=>{
+const $=id=>document.getElementById(id),key='zb_personal_memory_v1';
+window.loadZbMemory=()=>{try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x.title==='string'&&typeof x.body==='string').slice(0,50):[]}catch{return []}};
+let items=window.loadZbMemory();
+const save=()=>{localStorage.setItem(key,JSON.stringify(items));render()};
+function render(){const root=$('zbMemoryList');root.innerHTML='';if(!items.length){root.textContent='هنوز یادداشتی ذخیره نشده است.';return}
+items.forEach((item,index)=>{const card=document.createElement('article');card.className='zb-memory-item';const title=document.createElement('b');title.textContent=item.title;const body=document.createElement('p');body.textContent=item.body;const del=document.createElement('button');del.type='button';del.textContent='حذف یادداشت';del.onclick=()=>{items.splice(index,1);save()};card.append(title,body,del);root.append(card)})}
+$('zbMemoryAdd').onclick=()=>{const title=$('zbMemoryTitle').value.trim(),body=$('zbMemoryBody').value.trim();if(!title||!body){alert('عنوان و متن یادداشت را وارد کن.');return}if(items.length>=50){alert('حافظه محلی به سقف ۵۰ یادداشت رسیده است.');return}items.unshift({title:title.slice(0,100),body:body.slice(0,1200),updatedAt:new Date().toISOString()});save();$('zbMemoryTitle').value='';$('zbMemoryBody').value=''};
+render();
+})();
+</script>
+<script src="/modules.js" defer></script>\n</body></html>
