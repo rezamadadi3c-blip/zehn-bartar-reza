@@ -17,6 +17,40 @@ test("health reports service and AI binding", async () => {
   assert.equal(data.aiBinding, true);
 });
 
+
+test("trading analysis returns market data and technical indicators from CoinGecko", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async url => {
+    const target = String(url);
+    if (target.includes("/coins/markets?")) return Response.json([{
+      id: "bitcoin", name: "Bitcoin", current_price: 65000, market_cap: 1200000000000,
+      total_volume: 30000000000, price_change_percentage_24h: 2.1, price_change_percentage_7d: 5.2
+    }]);
+    if (target.includes("/market_chart?")) {
+      const now = Date.UTC(2026, 10, 24);
+      return Response.json({ prices: Array.from({ length: 90 }, (_, i) => [now - (89 - i) * 86400000, 50000 + i * 100]) });
+    }
+    throw new Error("Unexpected market-data endpoint: " + target);
+  };
+  try {
+    const response = await worker.fetch(new Request("https://example.test/api/trading/analysis?symbol=BTC"), { ASSETS: env.ASSETS });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.symbol, "BTC");
+    assert.equal(data.market.price, 65000);
+    assert.equal(data.indicators.trend, "مثبت");
+    assert.equal(data.history.length, 90);
+    assert.equal(data.source, "CoinGecko");
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("trading analysis rejects unsupported symbols", async () => {
+  const response = await worker.fetch(new Request("https://example.test/api/trading/analysis?symbol=FAKE"), { ASSETS: env.ASSETS });
+  const data = await response.json();
+  assert.equal(response.status, 400);
+  assert.match(data.error, /نماد پشتیبانی نمی‌شود/);
+});
+
 test("unknown non-API paths are served from assets", async () => {
   const response = await worker.fetch(new Request("https://example.test/"), env);
   assert.equal(await response.text(), "asset");
