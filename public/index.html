@@ -73,6 +73,16 @@ textarea{min-height:58px;max-height:170px;resize:vertical}
 </div>
 <div id="zbMemoryList" aria-live="polite"></div>
 </section>
+<section id="zbEvolution" aria-label="یادگیری و ارتقای برنامه">
+<h2>🧠 یادگیری و ارتقای ذهن برتر</h2>
+<p class="evo-note">آموخته‌ها و پیشنهادهای ارتقا روی همین دستگاه ذخیره می‌شوند. این بخش فعلاً حافظه و مدیریت پیشنهادهاست؛ تغییر کد یا انتشار نسخه فقط پس از بررسی، آزمون و تأیید انجام می‌شود.</p>
+<div class="evo-grid">
+  <div><label for="evoMemory">آموخته یا ترجیحی که باید حفظ شود</label><textarea id="evoMemory" placeholder="مثلاً پاسخ‌ها کوتاه و فارسی باشند..." maxlength="1500"></textarea><button class="primary" id="evoSaveMemory">ذخیره آموخته</button></div>
+  <div><label for="evoIdea">قابلیت یا ارتقای پیشنهادی</label><textarea id="evoIdea" placeholder="مثلاً افزودن اتصال امن به تقویم..." maxlength="1500"></textarea><button id="evoAddIdea">ثبت پیشنهاد ارتقا</button></div>
+</div>
+<div class="evo-columns"><div><h3>حافظه آموخته‌ها</h3><div id="evoMemories" aria-live="polite"></div></div><div><h3>صف ارتقاها</h3><div id="evoIdeas" aria-live="polite"></div></div></div>
+<p class="evo-note">امنیت: برنامه اجازه ندارد بی‌اجازه کد خودش را تغییر دهد، اطلاعات حساس را ذخیره کند یا تغییر تأییدنشده‌ای را منتشر کند.</p>
+</section>
 <div id="chat"><div class="msg bot">سلام. من ذهن برتر هستم. سؤال خود را بنویسید یا تصویر بفرستید.</div></div>
 <div id="status">در حال بررسی اتصال...</div>
 <div class="composer">
