@@ -26,6 +26,21 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Check embedded JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, subprocess, tempfile
+          html = pathlib.Path("app/src/main/assets/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script\\b[^>]*>([\\s\\S]*?)</script>", html, re.I)
+          if not scripts:
+              raise SystemExit("No embedded JavaScript blocks found")
+          for index, script in enumerate(scripts, 1):
+              path = pathlib.Path(tempfile.gettempdir()) / f"zb-script-{index}.js"
+              path.write_text(script, encoding="utf-8")
+              subprocess.run(["node", "--check", str(path)], check=True)
+          print(f"Validated {len(scripts)} embedded JavaScript blocks")
+          PY
+
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
 
