@@ -227,6 +227,24 @@ export default {
         limits: { requestBytes: MAX_BODY_BYTES, chatMessages: 24, imageBytes: 3 * 1024 * 1024, audioBytes: 4 * 1024 * 1024 }
       });
     }
+    if (request.method === "GET" && url.pathname === "/api/diagnostics") {
+      if (!(env.AI || env.GEMINI_API_KEY || env.GROQ_API_KEY)) {
+        return json({ ok: false, ai: false, error: "هیچ ارائه‌دهنده هوش ابری تنظیم نشده است." }, 503);
+      }
+      try {
+        const test = await runChatProviders(env, [{ role: "user", content: "Reply with exactly: OK" }], null);
+        return json({
+          ok: true, ai: true, provider: test.provider, reply: test.reply.slice(0, 80),
+          providers: { cloudflare: !!env.AI, gemini: !!env.GEMINI_API_KEY, groq: !!env.GROQ_API_KEY }
+        }, 200, { "cache-control": "no-store" });
+      } catch (error) {
+        console.error("Zehn Bartar AI diagnostic failure:", error?.message || "unknown");
+        return json({
+          ok: false, ai: false,
+          error: "آزمایش اجرای مدل ناموفق بود. دسترسی مدل، سهمیه Workers AI و تنظیمات ارائه‌دهنده را بررسی کن."
+        }, 502, { "cache-control": "no-store" });
+      }
+    }
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     if (request.method !== "POST") return json({ error: "روش درخواست پشتیبانی نمی‌شود." }, 405);
     const limited = rateLimit(request, url.pathname);
