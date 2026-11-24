@@ -53,7 +53,8 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <div class="za-perm"><label><input type="checkbox" id="zaEdit"> اجازه ویرایش</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaDelete"> اجازه حذف با تأیید</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaExternal"> اجازه درخواست اقدام در سرویس‌های متصل</label></div>
-<div class="za-perm"><label><input type="checkbox" id="zaSearch" checked> اجازه جست‌وجوی وب</label></div>\n<div class="za-perm"><label><input type="checkbox" id="zaOpen"> اجازه بازکردن پیوند</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaSearch" checked> اجازه جست‌وجوی وب</label></div>
+<div class="za-perm"><label><input type="checkbox" id="zaOpen"> اجازه بازکردن پیوند</label></div>
 <div class="za-perm"><label><input type="checkbox" id="zaAutoLow"> تأیید خودکار کارهای داخلیِ کم‌خطر</label></div>
 </div>
 <p class="za-muted">حذف، ارسال نهایی، پرداخت، تغییر امنیت حساب و اقدام‌های بیرونی هرگز با گزینه تأیید خودکارِ کم‌خطر انجام نمی‌شوند.</p>
@@ -70,7 +71,8 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <section id="tools" class="page">
 <div class="card"><h2>ابزارهای کاربردی</h2><p class="muted">این ابزارها بدون اتصال هوش مصنوعی کار می‌کنند.</p>
 <h3>ماشین‌حساب سریع</h3><input id="calc" inputmode="decimal" placeholder="مثلاً 125*3+40"><div class="row"><button class="primary" id="calcBtn">محاسبه</button><button id="calcClear">پاک‌کردن</button></div><p id="calcResult" class="muted"></p>
-<h3>جست‌وجوی وب</h3><input id="webQuery" placeholder="موضوع یا پرسش را وارد کن"><button class="primary" id="webSearch">جست‌وجوی اینترنت</button><div id="webResults" class="muted" aria-live="polite"></div><p class="hint">در صورت تنظیم کلید امن، جست‌وجو از Brave و Tavily استفاده می‌کند؛ در غیر این صورت ویکی‌پدیای فارسی پشتیبان است.</p>\n<h3>ساخت تصویر با هوش مصنوعی</h3><textarea id="imagePrompt" placeholder="تصویر موردنظر را توصیف کن..."></textarea><button class="primary" id="makeImage">ساخت تصویر</button><div id="generatedImage"></div>
+<h3>جست‌وجوی وب</h3><input id="webQuery" placeholder="موضوع یا پرسش را وارد کن"><button class="primary" id="webSearch">جست‌وجوی اینترنت</button><div id="webResults" class="muted" aria-live="polite"></div><p class="hint">در صورت تنظیم کلید امن، جست‌وجو از Brave و Tavily استفاده می‌کند؛ در غیر این صورت ویکی‌پدیای فارسی پشتیبان است.</p>
+<h3>ساخت تصویر با هوش مصنوعی</h3><textarea id="imagePrompt" placeholder="تصویر موردنظر را توصیف کن..."></textarea><button class="primary" id="makeImage">ساخت تصویر</button><div id="generatedImage"></div>
 <h3>تبدیل فایل صوتی به متن</h3><input id="audioInput" type="file" accept="audio/*"><button class="primary" id="transcribeAudio">تبدیل صدا</button><p id="audioResult" class="muted"></p>
 <h3>شمارش متن</h3><textarea id="wordText" placeholder="متن را وارد کن..."></textarea><p id="wordCount" class="muted">۰ کلمه · ۰ نویسه</p>
 <h3>یادداشت سریع</h3><textarea id="quickNote" placeholder="چیزی را که نباید فراموش کنی بنویس..."></textarea><button class="primary" id="quickSave">ذخیره در حافظه</button>
@@ -131,7 +133,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <button class="primary" id="testCloudAI">آزمایش واقعی اتصال هوش ابری</button><p id="aiTestInfo" class="muted" aria-live="polite"></p>
 <h3>قابلیت‌های موجود در این نسخه</h3>
 <ul class="muted"><li>گفتگوی فارسی و چندمرحله‌ای</li><li>ورودی صوتی و پاسخ صوتی</li><li>تحلیل تصویر و فایل</li><li>جست‌وجوی دانشنامه و پیوند منبع</li><li>حافظه قابل مدیریت</li><li>ابزارهای محاسباتی و برنامه‌ریزی</li></ul>
-<p class="muted">نسخه برنامه: ۲.۴.۰ · اتصال ابری نیازمند دسترسی فعال سرور است.</p>
+<p class="muted">نسخه برنامه: ۲.۴.۱ · اتصال ابری نیازمند دسترسی فعال سرور است.</p>
 </div></section>
 </main>
 <nav class="nav"><button class="active" data-page="home">خانه</button><button data-page="autonomy">خودکار</button><button data-page="tools">ابزارها</button><button data-page="agent">عامل هوشمند</button><button data-page="trading">ترید</button><button data-page="memory">حافظه</button><button data-page="settings">تنظیمات</button></nav>
