@@ -294,7 +294,7 @@ async function loadAnalysis(){
   const stats=[['قیمت فعلی', money(data.market.price)],['تغییر ۲۴ ساعته',signed(data.market.change24h)],['تغییر ۷ روزه',signed(data.market.change7d)],['حجم ۲۴ ساعته',money(data.market.volume24h)]];
   $('tradeStats').innerHTML='';stats.forEach(([label,value])=>{const tile=document.createElement('div');tile.className='tile';const b=document.createElement('b');b.textContent=value;const span=document.createElement('span');span.textContent=label;tile.append(b,span);$('tradeStats').append(tile);});
   drawChart(data.history);
-  const i=data.indicators;$('tradeIndicators').textContent='وضعیت روند: '+i.trend+' · امتیاز فنی: '+i.score+'/4 · RSI(14): '+(i.rsi14===null?'—':i.rsi14.toFixed(1))+' · میانگین ۲۰روزه: </html>+money(i.sma20)+' · میانگین ۵۰روزه: </html>+money(i.sma50)+' · MACD: '+money(i.macd);
+  const i=data.indicators;$('tradeIndicators').textContent='وضعیت روند: '+i.trend+' · امتیاز فنی: '+i.score+'/4 · RSI(14): '+(i.rsi14===null?'—':i.rsi14.toFixed(1))+' · میانگین ۲۰روزه: '+money(i.sma20)+' · میانگین ۵۰روزه: '+money(i.sma50)+' · MACD: '+money(i.macd);
   $('tradeSource').textContent='منبع: CoinGecko · داده دریافت‌شده: '+new Date(data.fetchedAt).toLocaleString('fa-IR')+' · '+data.disclaimer;
   $('tradeStatus').textContent='تحلیل '+data.name+' ('+data.symbol+') دریافت شد.';
   renderLedger();
@@ -306,7 +306,7 @@ $('calcRisk').onclick=()=>{
  const capital=Number($('riskCapital').value),risk=Number($('riskPercent').value),stop=Number($('riskStop').value);
  if(!(capital>0&&risk>0&&risk<=5&&stop>0&&stop<=50)){$('riskResult').textContent='مقادیر معتبر وارد کن؛ ریسک حداکثر ۵٪ و حد ضرر حداکثر ۵۰٪ باشد.';return;}
  const riskCash=capital*risk/100,position=riskCash/(stop/100);
- $('riskResult').textContent='حداکثر زیان فرضی: </html>+money(riskCash)+' · اندازه موقعیت تقریبی: </html>+money(position)+' (بدون احتساب کارمزد، لغزش قیمت و اهرم)';
+ $('riskResult').textContent='حداکثر زیان فرضی: '+money(riskCash)+' · اندازه موقعیت تقریبی: '+money(position)+' (بدون احتساب کارمزد، لغزش قیمت و اهرم)';
 };
 $('paperOpen').onclick=()=>{
  if(!latest){$('tradeStatus').textContent='اول داده بازار را دریافت کن.';return;}
