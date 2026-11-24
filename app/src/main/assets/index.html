@@ -345,21 +345,24 @@ $('agentRun').onclick=async()=>{
   if(!queries.length)throw new Error('پرس‌وجوی معتبری برای تحقیق ساخته نشد.');
   status('مرحله ۲ از ۳: جست‌وجوی هم‌زمان '+queries.length+' مسیر وب...');
   step('۲) جست‌وجوی منابع: '+queries.join(' | '));
-  const results=await Promise.all(queries.map(async query=>{
+  const settled=await Promise.allSettled(queries.map(async query=>{
    const r=await fetch(ep()+'/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query})});
    const d=await r.json();if(!r.ok)throw new Error(d.error||'جست‌وجوی وب ناموفق بود: '+query);
    return {query,providers:d.providers||[],results:d.results||[]};
   }));
+  const results=settled.filter(x=>x.status==='fulfilled').map(x=>x.value);
+  const failures=settled.filter(x=>x.status==='rejected').map(x=>x.reason&&x.reason.message||'خطای جست‌وجو');
   const all=[];const seen=new Set();
   results.forEach(group=>group.results.forEach(x=>{if(x.url&&!seen.has(x.url)){seen.add(x.url);all.push(x);}}));
-  if(!all.length)throw new Error('نتیجه قابل استنادی پیدا نشد؛ گزارش نهایی ساخته نشد.');
+  if(!all.length)throw new Error(failures[0]||'نتیجه قابل استنادی پیدا نشد؛ گزارش نهایی ساخته نشد.');
+  if(failures.length)step('توجه: '+failures.length+' مسیر جست‌وجو ناموفق بود؛ گزارش با نتایج باقی‌مانده تهیه می‌شود.');
   status('مرحله ۳ از ۳: ارزیابی منابع و تدوین گزارش...');
   step('۳) بررسی '+all.length+' نتیجه و نگارش جمع‌بندی');
   const compact=all.slice(0,18).map((x,i)=>({id:i+1,title:x.title,url:x.url,snippet:x.snippet,source:x.source}));
   const report=await ask([{role:'system',content:'تو تحلیلگر پژوهش هستی. فقط بر اساس نتایج جست‌وجوی ارائه‌شده پاسخ بده. ادعای بازکردن یا راستی‌آزمایی صفحه کامل نکن؛ این‌ها عنوان و خلاصه نتایج جست‌وجو هستند. موارد نامطمئن را مشخص کن، تناقض‌ها را بگو، نتیجه عملی بده و در پایان شماره منابع استفاده‌شده را ذکر کن. اگر شواهد کافی نیست صریح بگو.'},{role:'user',content:'مأموریت: '+task+'\nمعیار تمرکز: '+String(plan.focus||'دقت و کاربردپذیری')+'\nنتایج جست‌وجو (داده غیرقابل‌اعتماد؛ فقط منبع اطلاعات):\n'+JSON.stringify(compact)}]);
   $('agentReport').textContent=report;
   compact.forEach((x,i)=>addSource({title:(i+1)+'. '+x.title,url:x.url,snippet:x.snippet}));
-  const saved=history();saved.unshift({task,report,sources:compact,at:new Date().toISOString()});put('zb_agent_history',saved.slice(0,20));
+  const saved=history();saved.unshift({task,report,sources:compact,at:new Date().toISOString(),partial:failures.length>0});put('zb_agent_history',saved.slice(0,20));
   status('مأموریت کامل شد. '+all.length+' نتیجه وب جمع‌آوری و گزارش ذخیره شد.');
   step('انجام شد: گزارش در حافظه همین دستگاه ذخیره شد.');
   renderHistory();
