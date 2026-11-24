@@ -32,7 +32,7 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 #fileInfo{font-size:11px;color:var(--muted);padding:5px}
 </style></head>
 <body>
-<header><div class="logo">ذ</div><div><h1>ذهن برتر</h1><p>دستیار هوشمند شخصی · نسخه ۲.۳</p></div><div class="status" id="topStatus">در حال بررسی...</div></header>
+<header><div class="logo">ذ</div><div><h1>ذهن برتر</h1><p>دستیار هوشمند شخصی · نسخه ۲.۴</p></div><div class="status" id="topStatus">در حال بررسی...</div></header>
 <main>
 <section id="home" class="page active">
 <div class="hero"><strong>سلام. اینجا فضای کار توست.</strong><p>گفتگو، ابزارهای شخصی، یادداشت‌ها و فایل‌ها در یک محیط واحد.</p></div>
@@ -80,6 +80,35 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <input id="memoryTitle" placeholder="عنوان یادداشت"><textarea id="memoryBody" placeholder="متن یادداشت"></textarea><button class="primary" id="saveMemory">ذخیره یادداشت</button><div id="memoryList"></div></div>
 <div class="card"><h3>حریم خصوصی</h3><p class="muted">پیام‌هایی که برای دریافت پاسخ می‌فرستی به سرور هوش مصنوعی ارسال می‌شوند. یادداشت‌های حافظه روی همین دستگاه می‌مانند و هنگام چتِ فعال، بخشی از آن‌ها برای زمینه پاسخ فرستاده می‌شوند.</p><button id="clearMemory">پاک‌کردن همه یادداشت‌ها</button></div>
 </section>
+
+<section id="trading" class="page">
+<div class="hero"><strong>مرکز تحلیل بازار و ترید</strong><p>داده تجمیعی بازار، تحلیل تکنیکال و شبیه‌سازی معامله؛ بدون اتصال یا سفارش واقعی.</p></div>
+<div class="notice">حالت فعلی فقط تحلیل و معامله آزمایشی است. هیچ پولی جابه‌جا نمی‌شود و هیچ سفارش واقعی به صرافی ارسال نمی‌شود.</div>
+<div class="card">
+<h2>تحلیل بازار</h2>
+<div class="row"><select id="tradeSymbol"><option value="BTC">بیت‌کوین · BTC</option><option value="ETH">اتریوم · ETH</option><option value="SOL">سولانا · SOL</option><option value="XRP">ریپل · XRP</option><option value="DOGE">دوج‌کوین · DOGE</option><option value="ADA">کاردانو · ADA</option><option value="TON">تون‌کوین · TON</option><option value="BNB">بایننس‌کوین · BNB</option><option value="LTC">لایت‌کوین · LTC</option><option value="TRX">ترون · TRX</option></select><button class="primary" id="loadTrade">تحلیل تازه</button></div>
+<p class="muted" id="tradeStatus">برای دریافت داده زنده، نماد را انتخاب و تحلیل تازه را بزن.</p>
+<div class="grid" id="tradeStats"></div>
+<div id="tradeChart" style="margin-top:12px"></div>
+<div id="tradeIndicators" class="muted"></div>
+<p class="hint" id="tradeSource"></p>
+</div>
+<div class="card">
+<h2>مدیریت ریسک و اندازه موقعیت</h2>
+<p class="muted">محاسبه بر اساس سرمایه، درصد ریسک و فاصله حد ضرر؛ این محاسبه پیشنهاد سرمایه‌گذاری نیست.</p>
+<label class="muted" for="riskCapital">سرمایه فرضی (دلار)</label><input id="riskCapital" type="number" min="1" max="100000000" step="1" value="1000">
+<label class="muted" for="riskPercent">ریسک مجاز هر معامله (درصد)</label><input id="riskPercent" type="number" min="0.1" max="5" step="0.1" value="1">
+<label class="muted" for="riskStop">فاصله حد ضرر از ورود (درصد)</label><input id="riskStop" type="number" min="0.1" max="50" step="0.1" value="2">
+<button class="primary" id="calcRisk">محاسبه اندازه موقعیت</button><p id="riskResult" class="muted">نتیجه محاسبه اینجا نمایش داده می‌شود.</p>
+</div>
+<div class="card">
+<h2>دفتر معاملات آزمایشی</h2>
+<p class="muted">ثبت خرید یا فروش فرضی با قیمت آخرین تحلیل؛ اطلاعات فقط روی همین دستگاه ذخیره می‌شود.</p>
+<div class="row"><select id="paperSide"><option value="buy">خرید آزمایشی</option><option value="sell">فروش آزمایشی</option></select><input id="paperAmount" type="number" min="1" max="10000000" step="1" value="100" aria-label="مبلغ فرضی به دلار"></div>
+<button class="primary" id="paperOpen">ثبت معامله آزمایشی</button>
+<div id="paperLedger" class="muted" style="margin-top:10px"></div>
+</div>
+</section>
 <section id="settings" class="page">
 <div class="card"><h2>تنظیمات ذهن برتر</h2><p class="muted">اتصال هوش مصنوعی از طریق سرور امن انجام می‌شود. کلید محرمانه روی گوشی قرار نمی‌گیرد.</p>
 <div class="notice">سرور پیش‌فرض ذهن برتر تنظیم شده است. کلید محرمانه روی گوشی قرار نمی‌گیرد.</div>
@@ -88,10 +117,10 @@ h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 5px}.muted,.hin
 <button class="primary" id="testCloudAI">آزمایش واقعی اتصال هوش ابری</button><p id="aiTestInfo" class="muted" aria-live="polite"></p>
 <h3>قابلیت‌های موجود در این نسخه</h3>
 <ul class="muted"><li>گفتگوی فارسی و چندمرحله‌ای</li><li>ورودی صوتی و پاسخ صوتی</li><li>تحلیل تصویر و فایل</li><li>جست‌وجوی دانشنامه و پیوند منبع</li><li>حافظه قابل مدیریت</li><li>ابزارهای محاسباتی و برنامه‌ریزی</li></ul>
-<p class="muted">نسخه برنامه: ۲.۳.۰ · اتصال ابری نیازمند دسترسی فعال سرور است.</p>
+<p class="muted">نسخه برنامه: ۲.۴.۰ · اتصال ابری نیازمند دسترسی فعال سرور است.</p>
 </div></section>
 </main>
-<nav class="nav"><button class="active" data-page="home">خانه</button><button data-page="autonomy">خودکار</button><button data-page="tools">ابزارها</button><button data-page="memory">حافظه</button><button data-page="settings">تنظیمات</button></nav>
+<nav class="nav"><button class="active" data-page="home">خانه</button><button data-page="autonomy">خودکار</button><button data-page="tools">ابزارها</button><button data-page="trading">ترید</button><button data-page="memory">حافظه</button><button data-page="settings">تنظیمات</button></nav>
 <script>
 const $=id=>document.getElementById(id);$('openGemini').onclick=()=>{window.location.href='https://gemini.google.com/app';};const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};const put=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));}
@@ -212,6 +241,65 @@ $('zaAdd').onclick=()=>{
 $('zaRefresh').onclick=render;$('zaClearAudit').onclick=()=>{if(confirm('گزارش محلی پاک شود؟')){audit=[];save();render();}};
 const toggle=$('zaAutoToggle');if(toggle)toggle.onclick=()=>{$('zbAutoPanel').classList.toggle('open');};
 sync();render();
+})();
+</script>
+
+<style id="trading-style">
+#trading .card{border-color:#314967}#tradeStats .tile{min-width:0}#tradeStats .tile b{font-size:14px;overflow-wrap:anywhere}
+#tradeChart svg{width:100%;height:130px;display:block;background:#0b1524;border:1px solid var(--line);border-radius:12px}
+#tradeIndicators{line-height:2;margin-top:9px}#tradeSource{overflow-wrap:anywhere}
+#trading label{display:block;margin:8px 0 3px}#paperLedger .entry{font-size:12px}
+</style>
+
+<script id="trading-script">
+(()=>{
+const $=id=>document.getElementById(id);if(!$('trading'))return;
+let latest=null;
+const money=n=>Number.isFinite(Number(n))?new Intl.NumberFormat('en-US',{maximumFractionDigits:Number(n)>100?2:6}).format(Number(n)):'—';
+const signed=n=>Number.isFinite(Number(n))?(Number(n)>0?'+':'')+Number(n).toFixed(2)+'%':'—';
+function endpoint(){return get('zb_endpoint',DEFAULT_ENDPOINT).replace(/\/+$/,'');}
+function drawChart(points){
+ const box=$('tradeChart');box.innerHTML='';if(!points||points.length<2){box.textContent='داده نمودار کافی نیست.';return;}
+ const values=points.map(x=>x.price),min=Math.min(...values),max=Math.max(...values),span=max-min||1;
+ const coords=values.map((v,i)=>[8+i*584/(values.length-1),112-(v-min)*96/span]);
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 600 130');svg.setAttribute('role','img');svg.setAttribute('aria-label','نمودار قیمت ۹۰ روز گذشته');
+ const poly=document.createElementNS(ns,'polyline');poly.setAttribute('points',coords.map(p=>p.join(',')).join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke','#78e0c2');poly.setAttribute('stroke-width','2.5');poly.setAttribute('stroke-linejoin','round');poly.setAttribute('stroke-linecap','round');svg.append(poly);
+ const baseline=document.createElementNS(ns,'line');baseline.setAttribute('x1','8');baseline.setAttribute('x2','592');baseline.setAttribute('y1','118');baseline.setAttribute('y2','118');baseline.setAttribute('stroke','#293b55');svg.append(baseline);box.append(svg);
+}
+function renderLedger(){
+ const ledger=$('paperLedger'),items=get('zb_paper_trades',[]);ledger.innerHTML='';
+ if(!items.length){ledger.textContent='هنوز معامله آزمایشی ثبت نشده است.';return;}
+ items.slice(0,20).forEach(item=>{const row=document.createElement('div');row.className='entry';const pnl=latest&&latest.symbol===item.symbol?(item.side==='buy'?1:-1)*(latest.market.price-item.price)*item.quantity:null;row.textContent=item.side==='buy'?'خرید':'فروش';row.textContent+=' '+item.symbol+' · '+money(item.amount)+' دلار · ورود '+money(item.price)+' · '+(pnl===null?'سود/زیان: منتظر قیمت':('سود/زیان فرضی: '+(pnl>=0?'+':'')+money(pnl)+' دلار'));ledger.append(row);});
+}
+async function loadAnalysis(){
+ const button=$('loadTrade'),symbol=$('tradeSymbol').value;button.disabled=true;$('tradeStatus').textContent='در حال دریافت داده بازار و محاسبه شاخص‌ها...';
+ try{
+  const response=await fetch(endpoint()+'/api/trading/analysis?symbol='+encodeURIComponent(symbol));
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'دریافت تحلیل ناموفق بود.');
+  latest=data;
+  const stats=[['قیمت فعلی', '</html>+money(data.market.price)],['تغییر ۲۴ ساعته',signed(data.market.change24h)],['تغییر ۷ روزه',signed(data.market.change7d)],['حجم ۲۴ ساعته','</html>+money(data.market.volume24h)]];
+  $('tradeStats').innerHTML='';stats.forEach(([label,value])=>{const tile=document.createElement('div');tile.className='tile';const b=document.createElement('b');b.textContent=value;const span=document.createElement('span');span.textContent=label;tile.append(b,span);$('tradeStats').append(tile);});
+  drawChart(data.history);
+  const i=data.indicators;$('tradeIndicators').textContent='وضعیت روند: '+i.trend+' · امتیاز فنی: '+i.score+'/4 · RSI(14): '+(i.rsi14===null?'—':i.rsi14.toFixed(1))+' · میانگین ۲۰روزه: </html>+money(i.sma20)+' · میانگین ۵۰روزه: </html>+money(i.sma50)+' · MACD: '+money(i.macd);
+  $('tradeSource').textContent='منبع: CoinGecko · داده دریافت‌شده: '+new Date(data.fetchedAt).toLocaleString('fa-IR')+' · '+data.disclaimer;
+  $('tradeStatus').textContent='تحلیل '+data.name+' ('+data.symbol+') دریافت شد.';
+  renderLedger();
+ }catch(e){$('tradeStatus').textContent=e.message||'خطای دریافت داده بازار.';}
+ finally{button.disabled=false;}
+}
+$('loadTrade').onclick=loadAnalysis;
+$('calcRisk').onclick=()=>{
+ const capital=Number($('riskCapital').value),risk=Number($('riskPercent').value),stop=Number($('riskStop').value);
+ if(!(capital>0&&risk>0&&risk<=5&&stop>0&&stop<=50)){$('riskResult').textContent='مقادیر معتبر وارد کن؛ ریسک حداکثر ۵٪ و حد ضرر حداکثر ۵۰٪ باشد.';return;}
+ const riskCash=capital*risk/100,position=riskCash/(stop/100);
+ $('riskResult').textContent='حداکثر زیان فرضی: </html>+money(riskCash)+' · اندازه موقعیت تقریبی: </html>+money(position)+' (بدون احتساب کارمزد، لغزش قیمت و اهرم)';
+};
+$('paperOpen').onclick=()=>{
+ if(!latest){$('tradeStatus').textContent='اول داده بازار را دریافت کن.';return;}
+ const amount=Number($('paperAmount').value);if(!(amount>0&&amount<=10000000)){$('tradeStatus').textContent='مبلغ آزمایشی معتبر وارد کن.';return;}
+ const trades=get('zb_paper_trades',[]);trades.unshift({symbol:latest.symbol,side:$('paperSide').value,amount,price:latest.market.price,quantity:amount/latest.market.price,createdAt:new Date().toISOString()});put('zb_paper_trades',trades.slice(0,100));renderLedger();$('tradeStatus').textContent='معامله آزمایشی ثبت شد؛ هیچ سفارش واقعی ارسال نشده است.';
+};
+renderLedger();
 })();
 </script>
 </body></html>
