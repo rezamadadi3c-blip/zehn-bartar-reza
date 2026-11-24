@@ -1,7 +1,14 @@
 {
   "name": "zehn-bartar",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
-  "scripts": { "deploy": "wrangler deploy" },
-  "devDependencies": { "wrangler": "^4.0.0" }
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check src/worker.js && node --check public/modules.js && node --check public/sw.js",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
 }
